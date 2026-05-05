@@ -6,13 +6,18 @@
   'use strict';
 
   /* ---- State ---- */
+  const PAGE_SIZE = 15;
   const S = {
     arts: [],
     view: 'timeline',
     id: null,
-    flt: { pipeline: '', stage: '' },
+    flt: { pipeline: '', stage: '', month: '' },
     q: '',
-    tm: null
+    tm: null,
+    offset: 0,
+    hasMore: false,
+    total: 0,
+    rendered: 0
   };
 
   /* ---- DOM helpers ---- */
@@ -41,6 +46,28 @@
     mermaid.initialize({ theme: next === 'dark' ? 'dark' : 'default' });
   });
 
+  /* ---- Month filter init ---- */
+  (async function loadMonths() {
+    try {
+      const r = await fetch('/api/stats');
+      if (!r.ok) return;
+      const d = await r.json();
+      const months = (d.monthDistribution || []).map(x => x.month).sort().reverse();
+      const row = $('#monthFilters');
+      months.forEach(m => {
+        const [y, mo] = m.split('-');
+        const chip = document.createElement('button');
+        chip.className = 'f-chip';
+        chip.dataset.key = 'month';
+        chip.dataset.value = m;
+        chip.textContent = `${parseInt(mo)}月`;
+        row.appendChild(chip);
+      });
+      // Re-bind filter chips
+      bindFilterChips();
+    } catch (_) {}
+  })();
+
   /* ---- Router ---- */
   function route() {
     const h = location.hash;
@@ -67,26 +94,37 @@
   }
 
   /* ---- Load ---- */
-  async function loadArts() {
+  async function loadArts(reset = true) {
+    if (reset) {
+      S.offset = 0;
+      S.rendered = 0;
+      S.arts = [];
+    }
     try {
       const q = new URLSearchParams();
       if (S.flt.pipeline) q.set('pipeline', S.flt.pipeline);
       if (S.flt.stage) q.set('stage', S.flt.stage);
+      if (S.flt.month) q.set('month', S.flt.month);
       q.set('sort', 'date');
       q.set('order', 'desc');
+      q.set('limit', PAGE_SIZE);
+      q.set('offset', S.offset);
       const url = S.q
-        ? `/api/search?q=${encodeURIComponent(S.q)}`
+        ? `/api/search?q=${encodeURIComponent(S.q)}&limit=${PAGE_SIZE}&offset=${S.offset}`
         : `/api/articles?${q}`;
       const r = await fetch(url);
       if (!r.ok) throw r;
       const d = await r.json();
-      S.arts = d.articles || [];
+      S.arts = (reset ? [] : S.arts).concat(d.articles || []);
+      S.total = d.total;
+      S.offset += (d.articles || []).length;
+      S.hasMore = S.offset < d.total;
     } catch (e) {
       console.error(e);
-      S.arts = [];
+      if (reset) S.arts = [];
       toast('加载失败');
     }
-    drawTL();
+    drawTL(reset);
     updateCnt();
   }
 
@@ -96,6 +134,8 @@
     E.tlV.classList.toggle('active', n === 'timeline');
     E.dtV.classList.toggle('active', n === 'detail');
     E.stV.classList.toggle('active', n === 'stats');
+    // 详情页隐藏筛选栏
+    document.querySelector('.filter-strip').style.display = (n === 'detail') ? 'none' : '';
     if (n === 'detail') scrollTo(0, 0);
   }
 
@@ -126,10 +166,48 @@
   }
 
   /* ---- Timeline ---- */
-  function drawTL() {
-    E.tl.innerHTML = '';
+  function drawTL(reset) {
+    if (reset) E.tl.innerHTML = '';
+
+    const oldBtn = E.tl.querySelector('.load-more-wrap');
+    if (oldBtn) oldBtn.remove();
+    const oldToday = E.tl.querySelector('.today-strip');
+    if (oldToday) oldToday.remove();
+
     E.emp.style.display = S.arts.length ? 'none' : 'block';
-    for (const a of S.arts) E.tl.appendChild(card(a));
+
+    // 今日分析（仅首页无筛选时显示）
+    if (reset && !S.flt.pipeline && !S.flt.stage && !S.flt.month && !S.q && S.arts.length > 0) {
+      drawToday(S.arts);
+    }
+
+    // Group new cards by month, insert month headers
+    const monthName = d => (d || '').substring(0, 7) || '未知日期';
+    let lastMonth = '';
+    for (let i = S.rendered; i < S.arts.length; i++) {
+      const m = monthName(S.arts[i].date);
+      if (m !== lastMonth) {
+        const sep = document.createElement('div');
+        sep.className = 'month-sep';
+        const [y, mo] = m.split('-');
+        sep.textContent = `${y}年${parseInt(mo)}月`;
+        E.tl.appendChild(sep);
+        lastMonth = m;
+      }
+      E.tl.appendChild(card(S.arts[i]));
+    }
+    S.rendered = S.arts.length;
+
+    if (S.hasMore) {
+      const wrap = document.createElement('div');
+      wrap.className = 'load-more-wrap';
+      const btn = document.createElement('button');
+      btn.className = 'load-more-btn';
+      btn.textContent = `加载更多 (${S.total - S.offset} 篇剩余)`;
+      btn.addEventListener('click', () => loadArts(false));
+      wrap.appendChild(btn);
+      E.tl.appendChild(wrap);
+    }
   }
 
   function card(a) {
@@ -154,8 +232,45 @@
     return el;
   }
 
+  function drawToday(articles) {
+    // Group by latest date
+    const latestDate = articles[0].date;
+    const todayArts = articles.filter(a => a.date === latestDate);
+    if (!todayArts.length) return;
+
+    const d = latestDate.split('-');
+    const label = `${d[1]}月${d[2]}日`;
+
+    const strip = document.createElement('div');
+    strip.className = 'today-strip';
+    strip.innerHTML =
+      `<div class="today-head">
+        <span class="today-icon">✦</span>
+        <span>今日分析 · ${label}</span>
+        <span class="today-count">${todayArts.length} 篇</span>
+      </div>
+      <div class="today-row">` +
+        todayArts.map(a => {
+          const pc = pipeClass(a.pipeline);
+          return `<div class="today-card" data-id="${a.id}">
+            <span class="today-card-tag ${pc}">${esc(a.pipeline)}</span>
+            <div class="today-card-title">${esc(a.title)}</div>
+            <span class="today-card-src">${esc(a.source || '')}</span>
+          </div>`;
+        }).join('') +
+      `</div>`;
+
+    strip.querySelectorAll('.today-card').forEach(c => {
+      c.addEventListener('click', () => { location.hash = 'd/' + c.dataset.id; });
+    });
+
+    E.tl.before(strip);
+  }
+
   function updateCnt() {
-    let t = `共 ${S.arts.length} 篇`;
+    const total = S.total || S.arts.length;
+    let t = `共 ${total} 篇`;
+    if (S.arts.length < total) t += ` (已加载 ${S.arts.length})`;
     if (S.flt.pipeline) t += ` · ${S.flt.pipeline}`;
     if (S.flt.stage) t += ` · ${S.flt.stage}`;
     if (S.q) t += ` · 搜索："${S.q}"`;
@@ -200,9 +315,17 @@
     requestAnimationFrame(() => {
       const bs = E.art.querySelectorAll('pre.mermaid');
       if (bs.length) {
-        try { mermaid.run({ nodes: bs }); } catch (e) { console.error('Mermaid:', e); }
+        try {
+          mermaid.run({ nodes: bs }).then(() => {
+            for (const node of bs) {
+              node.addEventListener('click', () => showLightbox(node.innerHTML));
+            }
+          });
+        } catch (e) { console.error('Mermaid:', e); }
       }
+      buildTOC();
     });
+
   }
 
   /* ---- Stats ---- */
@@ -239,7 +362,7 @@
 
     E.sp.querySelectorAll('.tag-pill').forEach(el => {
       el.addEventListener('click', () => {
-        S.flt = { pipeline: '', stage: '' };
+        S.flt = { pipeline: '', stage: '', month: '' };
         S.q = el.dataset.tag;
         E.si.value = S.q;
         updChips();
@@ -303,17 +426,23 @@
   }
 
   /* ---- Filters ---- */
-  document.querySelectorAll('.f-chip[data-key]').forEach(b => {
-    b.addEventListener('click', () => {
-      const k = b.dataset.key, v = b.dataset.value;
-      S.flt[k] = v;
-      S.q = '';
-      E.si.value = '';
-      updChips(k);
-      location.hash = '';
-      loadArts();
+  function bindFilterChips() {
+    document.querySelectorAll('.f-chip[data-key]').forEach(b => {
+      // Remove old listeners by cloning
+      const clone = b.cloneNode(true);
+      b.parentNode.replaceChild(clone, b);
+      clone.addEventListener('click', () => {
+        const k = clone.dataset.key, v = clone.dataset.value;
+        S.flt[k] = v;
+        S.q = '';
+        E.si.value = '';
+        updChips(k);
+        location.hash = '';
+        loadArts();
+      });
     });
-  });
+  }
+  bindFilterChips();
 
   function updChips(key) {
     const ks = key ? [key] : ['pipeline', 'stage'];
@@ -330,24 +459,136 @@
     S.q = '';
     E.si.value = '';
     E.sd.classList.remove('show');
-    S.flt = { pipeline: '', stage: '' };
+    S.flt = { pipeline: '', stage: '', month: '' };
     updChips();
     location.hash = '';
     loadArts();
     showTimeline();
   });
-
   $('#backBtn').addEventListener('click', showTimeline);
   $('#statsBackBtn').addEventListener('click', showTimeline);
 
   /* ---- Keyboard ---- */
   document.addEventListener('keydown', e => {
-    if (e.key === 'Escape' && S.view !== 'timeline') showTimeline();
+    if (e.key === 'Escape') {
+      // Close lightbox first if open
+      const lb = document.querySelector('.mermaid-lb');
+      if (lb) { lb.remove(); return; }
+      if (S.view !== 'timeline') showTimeline();
+    }
     if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
       e.preventDefault();
       E.si.focus();
     }
   });
+
+  /* ---- Lightbox ---- */
+  function showLightbox(html) {
+    const old = document.querySelector('.mermaid-lb');
+    if (old) old.remove();
+
+    const lb = document.createElement('div');
+    lb.className = 'mermaid-lb';
+    lb.innerHTML =
+      `<div class="mermaid-lb-inner">` +
+        `<button class="mermaid-lb-close">&times;</button>` +
+        html +
+      `</div>`;
+
+    // Force SVG to fill the container
+    const svg = lb.querySelector('svg');
+    if (svg) {
+      svg.removeAttribute('width');
+      svg.removeAttribute('height');
+      svg.style.width = '100%';
+      svg.style.height = 'auto';
+      svg.style.minWidth = '65vw';
+      svg.style.maxHeight = '85vh';
+    }
+
+    const close = () => lb.remove();
+    lb.addEventListener('click', e => {
+      if (e.target === lb) close();
+    });
+    lb.querySelector('.mermaid-lb-close').addEventListener('click', close);
+
+    document.body.appendChild(lb);
+    requestAnimationFrame(() => lb.classList.add('show'));
+  }
+
+  /* ---- TOC ---- */
+  function buildTOC() {
+    // Remove old TOC
+    const old = document.querySelector('.toc-sidebar');
+    if (old) old.remove();
+
+    const prose = E.art.querySelector('.prose');
+    if (!prose) return;
+
+    const headings = prose.querySelectorAll('h2, h3');
+    if (headings.length < 2) return;
+
+    const items = [];
+    headings.forEach((h, i) => {
+      const id = 'hdr-' + i;
+      h.id = id;
+      items.push({ id, text: h.textContent, level: h.tagName === 'H2' ? 2 : 3 });
+    });
+
+    const sidebar = document.createElement('aside');
+    sidebar.className = 'toc-sidebar';
+    sidebar.innerHTML =
+      `<div class="toc-title">目录</div>` +
+      items.map(item =>
+        `<a class="toc-item toc-l${item.level}" href="#${item.id}">${esc(item.text)}</a>`
+      ).join('');
+
+    // Scroll to heading on click
+    sidebar.querySelectorAll('.toc-item').forEach(a => {
+      a.addEventListener('click', e => {
+        e.preventDefault();
+        const el = document.getElementById(a.hash.slice(1));
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          // Update active state
+          sidebar.querySelectorAll('.toc-item').forEach(x => x.classList.remove('toc-active'));
+          a.classList.add('toc-active');
+        }
+      });
+    });
+
+    E.art.querySelector('.detail-wrap').appendChild(sidebar);
+
+    // Scroll spy
+    let ticking = false;
+    const onScroll = () => {
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          let current = '';
+          headings.forEach((h, i) => {
+            if (h.getBoundingClientRect().top <= 120) current = 'hdr-' + i;
+          });
+          sidebar.querySelectorAll('.toc-item').forEach(a => {
+            a.classList.toggle('toc-active', a.hash === '#' + current);
+          });
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    sidebar._onScroll = onScroll;
+  }
+
+  // Clean up TOC scroll listener when leaving detail
+  const origShowTimeline = showTimeline;
+  showTimeline = function () {
+    const sidebar = document.querySelector('.toc-sidebar');
+    if (sidebar && sidebar._onScroll) {
+      window.removeEventListener('scroll', sidebar._onScroll);
+    }
+    origShowTimeline();
+  };
 
   /* ---- Utils ---- */
   function esc(s) {

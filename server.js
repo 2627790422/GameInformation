@@ -37,6 +37,11 @@ console.log('='.repeat(50));
 const articles = scanner.scanAll();
 search.buildIndex(articles);
 
+// 用 scanner.getArticles() 作为动态数据源，确保 refresh 后能获取最新数据
+function getArticles() {
+  return scanner.getArticles();
+}
+
 // ============ API 路由 ============
 
 /**
@@ -45,8 +50,14 @@ search.buildIndex(articles);
  * Query params: pipeline, stage, tag, sort, order, limit, offset
  */
 app.get('/api/articles', (req, res) => {
-  let result = articles;
-  const { pipeline, stage, tag, sort = 'date', order = 'desc', limit, offset } = req.query;
+  let result = getArticles();
+  const { pipeline, stage, tag, month, sort = 'date', order = 'desc', limit, offset } = req.query;
+
+  // 月份筛选
+  if (month) {
+    const months = month.split(',');
+    result = result.filter(a => a.date && months.some(m => a.date.startsWith(m)));
+  }
 
   // 流水线筛选
   if (pipeline) {
@@ -123,6 +134,30 @@ app.get('/api/articles/:id', (req, res) => {
   // 用 marked 渲染 Markdown 为 HTML
   let html = marked.parse(article.content || '');
 
+  // 将 [[wiki-link]] 转换为文章卡片（复用时间线卡片样式）
+  html = html.replace(/\[\[([^\]]+)\]\]/g, (_, filename) => {
+    const targetId = scanner.getIdByFilename(filename.trim());
+    if (!targetId) return filename;
+    const target = scanner.getArticleById(targetId);
+    if (!target) return filename;
+    const tags = (target.tags || []).slice(0, 4);
+    const desc = (target.summary || '').slice(0, 120);
+    const pc = target.pipeline === '微信资讯' ? 'pipe-wx' :
+                target.pipeline === '自主采集' ? 'pipe-sc' :
+                target.pipeline === '游戏跟踪' ? 'pipe-tr' : '';
+    return `<a href="#d/${target.id}" class="wiki-card" data-pipeline="${target.pipeline}">
+      <div class="card-top">
+        <span class="card-badge ${pc}">${target.pipeline}</span>
+        <span class="card-badge">${target.stage}</span>
+        <span class="card-date">${target.date || ''}</span>
+      </div>
+      <div class="card-title">${target.title}</div>
+      ${target.source ? `<div class="card-source">${target.source}</div>` : ''}
+      ${desc ? `<div class="card-desc">${desc}</div>` : ''}
+      ${tags.length ? `<div class="card-tags">${tags.map(t => `<span class="card-tag">${t}</span>`).join('')}</div>` : ''}
+    </a>`;
+  });
+
   // 将 Mermaid 代码块转为客户端渲染标签
   html = convertMermaidBlocks(html);
 
@@ -145,7 +180,7 @@ app.get('/api/search', (req, res) => {
     return res.json({ total: 0, articles: [] });
   }
 
-  const results = search.search(q, articles);
+  const results = search.search(q, getArticles());
   const listItems = results.map(a => ({
     id: a.id,
     title: a.title,
@@ -167,13 +202,14 @@ app.get('/api/search', (req, res) => {
  * 统计面板数据
  */
 app.get('/api/stats', (req, res) => {
+  const allArts = getArticles();
   const pipelineCounts = {};
   const stageCounts = {};
   const allTags = new Map();
   let withDate = 0;
   let withoutDate = 0;
 
-  for (const a of articles) {
+  for (const a of allArts) {
     // 流水线统计
     pipelineCounts[a.pipeline] = (pipelineCounts[a.pipeline] || 0) + 1;
 
@@ -197,7 +233,7 @@ app.get('/api/stats', (req, res) => {
   }
 
   // 最近更新
-  const dates = articles
+  const dates = allArts
     .filter(a => a.date)
     .map(a => a.date)
     .sort()
@@ -211,7 +247,7 @@ app.get('/api/stats', (req, res) => {
 
   // 按月份统计
   const monthCounts = {};
-  for (const a of articles) {
+  for (const a of allArts) {
     if (a.date) {
       const month = a.date.substring(0, 7); // YYYY-MM
       monthCounts[month] = (monthCounts[month] || 0) + 1;
@@ -261,6 +297,6 @@ app.get('*', (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`[server] 服务已启动: http://localhost:${PORT}`);
-  console.log(`[server] 文章总数: ${articles.length}`);
+  console.log(`[server] 文章总数: ${getArticles().length}`);
   console.log(`[server] 按 Ctrl+C 停止服务`);
 });
