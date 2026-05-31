@@ -51,7 +51,7 @@ function getArticles() {
  */
 app.get('/api/articles', (req, res) => {
   let result = getArticles();
-  const { pipeline, stage, tag, month, sort = 'date', order = 'desc', limit, offset } = req.query;
+  const { pipeline, stage, tag, month, sort = 'date', order = 'desc', limit, offset, exclude } = req.query;
 
   // 月份筛选
   if (month) {
@@ -69,6 +69,12 @@ app.get('/api/articles', (req, res) => {
   if (stage) {
     const stages = stage.split(',');
     result = result.filter(a => stages.includes(a.stage));
+  }
+
+  // 排除筛选（当用户点击了自主采集 chip 时不排除）
+  if (exclude) {
+    const excludes = exclude.split(',');
+    result = result.filter(a => !excludes.includes(a.pipeline));
   }
 
   // 标签筛选
@@ -175,12 +181,19 @@ app.get('/api/articles/:id', (req, res) => {
  * Query params: q (搜索关键词)
  */
 app.get('/api/search', (req, res) => {
-  const { q } = req.query;
+  const { q, exclude } = req.query;
   if (!q || q.trim().length === 0) {
     return res.json({ total: 0, articles: [] });
   }
 
-  const results = search.search(q, getArticles());
+  let articles = getArticles();
+
+  if (exclude) {
+    const excludes = exclude.split(',');
+    articles = articles.filter(a => !excludes.includes(a.pipeline));
+  }
+
+  const results = search.search(q, articles);
   const listItems = results.map(a => ({
     id: a.id,
     title: a.title,

@@ -1,108 +1,62 @@
 /**
  * api/articles.js — Vercel Serverless Function
- * GET /api/articles?id=xxx       → 单篇详情
- * GET /api/articles?limit=&offset=... → 列表
+ * 直接扫描本地 reference 目录，无需 Supabase
  */
 
-const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY;
+const scanner = require('../lib/scanner');
+const parser = require('../lib/parser');
+const { marked } = require('marked');
 
-async function supabaseGet(path, res) {
-  const r = await fetch(`${SUPABASE_URL}${path}`, {
-    headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` },
-  });
-  if (!r.ok) {
-    return res.status(r.status).json({ error: await r.text() });
-  }
-  return res.json(await r.json());
-}
+marked.setOptions({ breaks: true, gfm: true });
+
+// 初始化（Vercel 上每个冷启动只执行一次）
+scanner.scanAll();
 
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  const { id, pipeline, stage, tag, month, sort, order, limit, offset } = req.query;
+  const { id, pipeline, stage, sort, order, limit, offset, exclude } = req.query;
 
-  // 单篇详情
   if (id) {
-    const r = await fetch(
-      `${SUPABASE_URL}/rest/v1/articles?id=eq.${encodeURIComponent(id)}&select=*`,
-      { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } }
-    );
-    const data = await r.json();
-    if (!data.length) return res.status(404).json({ error: '文章未找到' });
-    const article = data[0];
+    const article = scanner.getArticleById(id);
+    if (!article) return res.status(404).json({ error: '文章未找到' });
 
-    // 获取全量文章用于 wiki-link 映射
-    const r2 = await fetch(
-      `${SUPABASE_URL}/rest/v1/articles?select=id,title`,
-      { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } }
-    );
-    const allArts = await r2.json();
-    const filenameMap = new Map();
-    for (const a of allArts) {
-      try {
-        const decoded = Buffer.from(a.id, 'base64url').toString('utf-8');
-        const filename = decoded.replace(/\\/g, '/').split('/').pop().replace(/\.md$/i, '');
-        filenameMap.set(filename, a.id);
-      } catch (_) {}
-    }
+    let html = marked.parse(article._rawContent || article.content || '');
+    html = parser.convertMermaidBlocks(html);
 
-    // wiki-link → 小卡片
-    let html = article.html || '';
-    html = html.replace(/\[\[([^\]]+)\]\]/g, (_, fn) => {
-      const tid = filenameMap.get(fn.trim());
-      return tid ? `<a href="#d/${tid}" class="wiki-card">${fn}</a>` : fn;
+    // wiki-link 解析
+    html = html.replace(/\[\[([^\]]+)\]\]/g, (_, filename) => {
+      const targetId = scanner.getIdByFilename(filename.trim());
+      return targetId ? `<a href="#d/${targetId}" class="wiki-card">${filename}</a>` : filename;
     });
 
-    return res.json({ ...article, html, content: undefined });
+    return res.json({ ...article, html, _rawContent: undefined, _filePath: undefined });
   }
 
-  // 文章列表
-  const params = ['select=*'];
-  const filters = [];
+  // 列表
+  let articles = scanner.getArticles();
 
   if (pipeline) {
-    filters.push(`pipeline=in.(${encodeURIComponent(pipeline)})`);
+    const pipes = pipeline.split(',');
+    articles = articles.filter(a => pipes.includes(a.pipeline));
   }
   if (stage) {
-    filters.push(`stage=in.(${encodeURIComponent(stage)})`);
+    const stages = stage.split(',');
+    articles = articles.filter(a => stages.includes(a.stage));
   }
-  if (tag) {
-    filters.push(`tags=ov.{${encodeURIComponent(tag)}}`);
-  }
-  if (month) {
-    const months = month.split(',');
-    filters.push(`or=(${months.map(m => `date.ilike.${m}*`).join(',')})`);
+  if (exclude) {
+    const excludes = exclude.split(',');
+    articles = articles.filter(a => !excludes.includes(a.pipeline));
   }
 
-  // 排序
-  const col = sort === 'title' ? 'title' : 'date';
-  const dir = order === 'asc' ? 'asc' : 'desc';
-  const nulls = dir === 'desc' ? 'nullslast' : 'nullsfirst';
-  params.push(`order=${col}.${dir}.${nulls}`);
+  const total = articles.length;
 
-  // 分页（用 Range header 或 limit/offset 参数）
   const lim = parseInt(limit) || 100;
   const off = parseInt(offset) || 0;
-  params.push(`limit=${lim}`);
-  params.push(`offset=${off}`);
+  articles = articles.slice(off, off + lim);
 
-  const queryStr = [...params, ...filters].join('&');
-
-  const r = await fetch(
-    `${SUPABASE_URL}/rest/v1/articles?${queryStr}`,
-    { headers: {
-      apikey: SUPABASE_KEY,
-      Authorization: `Bearer ${SUPABASE_KEY}`,
-      Prefer: 'count=exact',
-    }}
-  );
-
-  const total = parseInt(r.headers.get('content-range')?.split('/')[1] || '0');
-  const data = await r.json();
-
-  const list = (data || []).map(a => ({
+  const list = articles.map(a => ({
     id: a.id, title: a.title, pipeline: a.pipeline, stage: a.stage,
     date: a.date, summary: a.summary, tags: a.tags, source: a.source, url: a.url,
   }));

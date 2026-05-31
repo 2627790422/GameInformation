@@ -1,16 +1,16 @@
-const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY;
+/**
+ * api/stats.js — Vercel Serverless Function
+ */
+
+const scanner = require('../lib/scanner');
+
+scanner.scanAll();
 
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  // 只取需要的字段
-  const r = await fetch(
-    `${SUPABASE_URL}/rest/v1/articles?select=pipeline,stage,date,tags&limit=1000`,
-    { headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` } }
-  );
-  const articles = await r.json();
+  const articles = scanner.getArticles();
 
   const pipelineCounts = {};
   const stageCounts = {};
@@ -18,7 +18,7 @@ module.exports = async (req, res) => {
   const monthCounts = {};
   let withDate = 0, withoutDate = 0;
 
-  for (const a of (articles || [])) {
+  for (const a of articles) {
     pipelineCounts[a.pipeline] = (pipelineCounts[a.pipeline] || 0) + 1;
     const key = `${a.pipeline} - ${a.stage}`;
     stageCounts[key] = (stageCounts[key] || 0) + 1;
@@ -37,10 +37,10 @@ module.exports = async (req, res) => {
     }
   }
 
-  const dates = (articles || []).filter(a => a.date).map(a => a.date).sort().reverse();
+  const dates = articles.filter(a => a.date).map(a => a.date).sort().reverse();
 
   res.json({
-    total: (articles || []).length,
+    total: articles.length,
     pipelineCounts,
     stageCounts,
     topTags: [...allTags.entries()]

@@ -1,41 +1,40 @@
-const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_KEY = process.env.SUPABASE_ANON_KEY;
+/**
+ * api/search.js — Vercel Serverless Function
+ */
+
+const scanner = require('../lib/scanner');
+const search = require('../lib/search');
+
+scanner.scanAll();
 
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  const { q, limit, offset } = req.query;
-  if (!q || !q.trim()) return res.json({ total: 0, articles: [] });
+  const q = req.query.q || '';
+  const limit = parseInt(req.query.limit) || 20;
+  const offset = parseInt(req.query.offset) || 0;
+  const exclude = req.query.exclude || '';
 
-  const keyword = q.trim();
-  const encoded = encodeURIComponent(`*${keyword}*`);
-  const lim = parseInt(limit) || 20;
-  const off = parseInt(offset) || 0;
+  if (!q.trim()) return res.json({ total: 0, articles: [] });
 
-  // ILIKE 搜索 title, summary, content
-  const filter = `or=(title.ilike.${encoded},summary.ilike.${encoded},content.ilike.${encoded})`;
+  let articles = scanner.getArticles();
 
-  const r = await fetch(
-    `${SUPABASE_URL}/rest/v1/articles?select=id,title,pipeline,stage,date,summary,tags,source,url&${filter}&order=date.desc.nullslast&limit=${lim}&offset=${off}`,
-    { headers: {
-      apikey: SUPABASE_KEY,
-      Authorization: `Bearer ${SUPABASE_KEY}`,
-      Prefer: 'count=exact',
-    }}
-  );
+  if (exclude) {
+    const excludes = exclude.split(',');
+    articles = articles.filter(a => !excludes.includes(a.pipeline));
+  }
 
-  const total = parseInt(r.headers.get('content-range')?.split('/')[1] || '0');
-  const data = await r.json();
+  const results = search.search(q, articles);
+  const total = results.length;
+  const sliced = results.slice(offset, offset + limit);
 
-  // 简单相关度评分
-  const articles = (data || []).map(a => {
-    let score = 1;
-    if (a.title && a.title.includes(keyword)) score += 3;
-    if (a.summary && a.summary.includes(keyword)) score += 2;
-    return { ...a, _score: score };
+  res.json({
+    total,
+    articles: sliced.map(a => ({
+      id: a.id, title: a.title, pipeline: a.pipeline, stage: a.stage,
+      date: a.date, summary: a.summary, tags: a.tags, source: a.source, url: a.url,
+      _score: a._score,
+    })),
   });
-  articles.sort((a, b) => b._score - a._score);
-
-  res.json({ total, articles });
 };
