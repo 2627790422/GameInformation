@@ -19,14 +19,17 @@ const REF_DIR = path.join(__dirname, '..', 'reference');
 
 // ============ 获取 Vault ============
 
-const OBSIDIAN_REPO = 'https://github.com/2627790422/ObsidianNote.git';
+const OBSIDIAN_REPO = process.env.GITHUB_TOKEN
+  ? `https://${process.env.GITHUB_TOKEN}@github.com/2627790422/ObsidianNote.git`
+  : 'https://github.com/2627790422/ObsidianNote.git';
 
 if (process.env.VAULT_PATH) {
   // 本地开发：使用环境变量指定的路径
   console.log('[build] 使用本地 Vault:', process.env.VAULT_PATH);
 } else if (fs.existsSync(path.join(REF_DIR, '.git'))) {
-  // Vercel 已有缓存：git pull
+  // Vercel 已有缓存：更新 remote URL 然后 git pull
   console.log('[build] git pull 最新笔记...');
+  execSync(`git remote set-url origin ${OBSIDIAN_REPO}`, { cwd: REF_DIR, stdio: 'pipe' });
   execSync('git pull --ff-only', { cwd: REF_DIR, stdio: 'inherit' });
 } else {
   // Vercel 首次构建：clone（如果目录有残留则先清理）
@@ -37,7 +40,7 @@ if (process.env.VAULT_PATH) {
   console.log('[build] clone Obsidian Vault...');
   execSync(`git clone --depth 1 ${OBSIDIAN_REPO} reference`, {
     cwd: path.join(__dirname, '..'),
-    stdio: 'inherit',
+    stdio: ['pipe', 'inherit', 'pipe'],
   });
 }
 
