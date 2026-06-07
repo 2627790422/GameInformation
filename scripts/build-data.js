@@ -230,9 +230,9 @@ fs.writeFileSync(path.join(DATA_DIR, 'stats.json'), JSON.stringify(stats));
 console.log(`[build] 完成: ${articles.length} 篇文章`);
 console.log(`[build] 数据文件已写入: ${DATA_DIR}`);
 
+})();  // 关闭 IIFE
 } catch (e) {
   console.error('[build] 构建失败:', e.message);
   console.error('[build] 堆栈:', e.stack);
   process.exit(1);
 }
-})();
