@@ -68,8 +68,8 @@ if (!process.env.VAULT_PATH && !fs.existsSync(REF_DIR)) {
   }
 }
 
-// 设置 scanner 读取路径
-process.env.VAULT_PATH = process.env.VAULT_PATH || path.join(REF_DIR, '游戏设计');
+// 设置 scanner 读取路径（vault 根目录，各 pipeline 自行指定子目录）
+process.env.VAULT_PATH = process.env.VAULT_PATH || REF_DIR;
 const scanner = require('../lib/scanner');
 
 // ============ 扫描 ============
