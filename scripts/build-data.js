@@ -29,7 +29,11 @@ if (process.env.VAULT_PATH) {
   console.log('[build] git pull 最新笔记...');
   execSync('git pull --ff-only', { cwd: REF_DIR, stdio: 'inherit' });
 } else {
-  // Vercel 首次构建：clone
+  // Vercel 首次构建：clone（如果目录有残留则先清理）
+  if (fs.existsSync(REF_DIR)) {
+    console.log('[build] 清理残留目录...');
+    fs.rmSync(REF_DIR, { recursive: true, force: true });
+  }
   console.log('[build] clone Obsidian Vault...');
   execSync(`git clone --depth 1 ${OBSIDIAN_REPO} reference`, {
     cwd: path.join(__dirname, '..'),
