@@ -6,6 +6,11 @@
  */
 
 try { (function main() {
+console.log('[build] === 开始构建 ===');
+console.log('[build] Node版本:', process.version);
+console.log('[build] cwd:', process.cwd());
+console.log('[build] GITHUB_TOKEN:', process.env.GITHUB_TOKEN ? '已设置('+process.env.GITHUB_TOKEN.slice(0,8)+'...)' : '未设置');
+console.log('[build] VAULT_PATH:', process.env.VAULT_PATH || '未设置');
 
 const fs = require('fs');
 const path = require('path');
