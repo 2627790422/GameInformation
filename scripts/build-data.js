@@ -24,10 +24,6 @@ const REF_DIR = path.join(__dirname, '..', 'reference');
 
 // ============ 获取 Vault ============
 
-const OBSIDIAN_REPO = process.env.GITHUB_TOKEN
-  ? `https://${process.env.GITHUB_TOKEN}@github.com/2627790422/ObsidianNote.git`
-  : 'https://github.com/2627790422/ObsidianNote.git';
-
 // 防止 Git 所有权检测报错（Vercel 构建环境需要）
 try { execSync('git config --global --add safe.directory \'*\'', { stdio: 'pipe' }); } catch {}
 
@@ -35,19 +31,34 @@ if (process.env.VAULT_PATH) {
   // 本地开发：使用环境变量指定的路径
   console.log('[build] 使用本地 Vault:', process.env.VAULT_PATH);
 } else if (fs.existsSync(path.join(REF_DIR, '.git'))) {
-  // Vercel 已有缓存：更新 remote URL 然后 git pull
+  // Vercel 缓存：git pull
   console.log('[build] git pull 最新笔记...');
-  execSync(`git remote set-url origin ${OBSIDIAN_REPO}`, { cwd: REF_DIR, stdio: 'pipe' });
-  execSync('git pull --ff-only', { cwd: REF_DIR, stdio: 'inherit' });
-} else {
-  // Vercel 首次构建：clone（如果目录有残留则先清理）
+  try {
+    if (process.env.GITHUB_TOKEN) {
+      execSync(`git -c http.extraHeader="Authorization: Bearer ${process.env.GITHUB_TOKEN}" pull --ff-only`, {
+        cwd: REF_DIR, stdio: 'inherit',
+      });
+    } else {
+      execSync('git pull --ff-only', { cwd: REF_DIR, stdio: 'inherit' });
+    }
+  } catch (pullError) {
+    console.error('[build] git pull 失败，清理后重新 clone');
+    fs.rmSync(REF_DIR, { recursive: true, force: true });
+  }
+}
+// 走到这里说明需要 clone（首次或 pull 失败后重试）
+if (!process.env.VAULT_PATH && !fs.existsSync(REF_DIR)) {
+  // Vercel 构建：clone（如果目录有残留则先清理）
   if (fs.existsSync(REF_DIR)) {
     console.log('[build] 清理残留目录...');
     fs.rmSync(REF_DIR, { recursive: true, force: true });
   }
   console.log('[build] clone Obsidian Vault...');
+  const cloneCmd = process.env.GITHUB_TOKEN
+    ? `git -c http.extraHeader="Authorization: Bearer ${process.env.GITHUB_TOKEN}" clone --depth 1 https://github.com/2627790422/ObsidianNote.git reference`
+    : `git clone --depth 1 https://github.com/2627790422/ObsidianNote.git reference`;
   try {
-    execSync(`git clone --depth 1 ${OBSIDIAN_REPO} reference`, {
+    execSync(cloneCmd, {
       cwd: path.join(__dirname, '..'),
       stdio: 'inherit',
     });
