@@ -113,7 +113,8 @@ for (const a of articles) {
     const desc = (target.summary || '').slice(0, 120);
     const pc = target.pipeline === '微信资讯' ? 'pipe-wx' :
                 target.pipeline === '自主采集' ? 'pipe-sc' :
-                target.pipeline === '游戏跟踪' ? 'pipe-tr' : '';
+                target.pipeline === '游戏跟踪' ? 'pipe-tr' :
+                target.pipeline === 'AI资讯' ? 'pipe-ai' : '';
     return `<a href="#d/${target.id}" class="wiki-card" data-pipeline="${target.pipeline}">
       <div class="card-top">
         <span class="card-badge ${pc}">${target.pipeline}</span>

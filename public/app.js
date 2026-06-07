@@ -90,6 +90,7 @@
     if (pipeline === '微信资讯') return 'pipe-wx';
     if (pipeline === '自主采集') return 'pipe-sc';
     if (pipeline === '游戏跟踪') return 'pipe-tr';
+    if (pipeline === 'AI资讯') return 'pipe-ai';
     return '';
   }
 
@@ -171,32 +172,79 @@
 
     const oldBtn = E.tl.querySelector('.load-more-wrap');
     if (oldBtn) oldBtn.remove();
-    const oldToday = E.tl.querySelector('.today-strip');
-    if (oldToday) oldToday.remove();
 
     E.emp.style.display = S.arts.length ? 'none' : 'block';
 
-    // 今日分析（仅首页无筛选时显示）
-    if (reset && !S.flt.pipeline && !S.flt.stage && !S.flt.month && !S.q && S.arts.length > 0) {
-      drawToday(S.arts);
+    if (reset) {
+      S.rendered = 0;
+      // Hero: first article
+      if (S.arts.length >= 1) {
+        E.tl.appendChild(createSectionHeader('头条聚焦'));
+        E.tl.appendChild(card(S.arts[0], 'hero'));
+        S.rendered = 1;
+      }
+
+      // Standard: articles 2-7 (indices 1-6)
+      if (S.arts.length >= 2) {
+        const rule = document.createElement('div');
+        rule.className = 'section-rule';
+        E.tl.appendChild(rule);
+        E.tl.appendChild(createSectionHeader('最新分析'));
+        const end = Math.min(7, S.arts.length);
+        for (let i = 1; i < end; i++) {
+          E.tl.appendChild(card(S.arts[i], 'standard'));
+        }
+        S.rendered = end;
+      }
+
+      // Compact: articles 8+ (index 7+)
+      if (S.arts.length >= 8) {
+        const rule = document.createElement('div');
+        rule.className = 'section-rule';
+        E.tl.appendChild(rule);
+        E.tl.appendChild(createSectionHeader('更早的文章'));
+
+        // Group by month
+        const monthName = d => (d || '').substring(0, 7) || '未知日期';
+        let lastMonth = '';
+        for (let i = 7; i < S.arts.length; i++) {
+          const m = monthName(S.arts[i].date);
+          if (m !== lastMonth) {
+            const sep = document.createElement('div');
+            sep.className = 'month-sep';
+            const [y, mo] = m.split('-');
+            sep.textContent = `──── ${y}年${parseInt(mo)}月 ────`;
+            E.tl.appendChild(sep);
+            lastMonth = m;
+          }
+          E.tl.appendChild(card(S.arts[i], 'compact'));
+        }
+        S.rendered = S.arts.length;
+      }
+    } else {
+      // Load more: append new articles as compact, grouped by month
+      const monthName = d => (d || '').substring(0, 7) || '未知日期';
+      // Determine the last month rendered to avoid duplicate separators
+      let lastMonth = '';
+      if (S.arts.length > S.rendered && S.rendered > 0) {
+        lastMonth = monthName(S.arts[Math.max(0, S.rendered - 1)].date);
+      }
+      for (let i = S.rendered; i < S.arts.length; i++) {
+        const m = monthName(S.arts[i].date);
+        if (m !== lastMonth) {
+          const sep = document.createElement('div');
+          sep.className = 'month-sep';
+          const [y, mo] = m.split('-');
+          sep.textContent = `──── ${y}年${parseInt(mo)}月 ────`;
+          E.tl.appendChild(sep);
+          lastMonth = m;
+        }
+        E.tl.appendChild(card(S.arts[i], 'compact'));
+      }
+      S.rendered = S.arts.length;
     }
 
-    // Group new cards by month, insert month headers
-    const monthName = d => (d || '').substring(0, 7) || '未知日期';
-    let lastMonth = '';
-    for (let i = S.rendered; i < S.arts.length; i++) {
-      const m = monthName(S.arts[i].date);
-      if (m !== lastMonth) {
-        const sep = document.createElement('div');
-        sep.className = 'month-sep';
-        const [y, mo] = m.split('-');
-        sep.textContent = `${y}年${parseInt(mo)}月`;
-        E.tl.appendChild(sep);
-        lastMonth = m;
-      }
-      E.tl.appendChild(card(S.arts[i]));
-    }
-    S.rendered = S.arts.length;
+    updateMastheadMeta();
 
     if (S.hasMore) {
       const wrap = document.createElement('div');
@@ -210,24 +258,45 @@
     }
   }
 
-  function card(a) {
+  function card(a, variant) {
+    variant = variant || 'standard';
     const el = document.createElement('div');
-    el.className = 'card';
+    el.className = 'card ' + variant;
     el.setAttribute('data-pipeline', a.pipeline);
-    const tags = (a.tags || []).slice(0, 4);
-    const desc = (a.summary || '').slice(0, 180);
     const pc = pipeClass(a.pipeline);
 
-    el.innerHTML =
-      `<div class="card-top">` +
+    if (variant === 'hero') {
+      const tags = (a.tags || []).slice(0, 4);
+      const desc = (a.summary || '').slice(0, 250);
+      el.innerHTML =
+        `<div class="card-top">` +
+          `<span class="card-badge ${pc}">${esc(a.pipeline)}</span>` +
+          `<span class="card-badge">${esc(a.stage)}</span>` +
+          `<span class="card-date">${formatDateChinese(a.date)}</span>` +
+        `</div>` +
+        `<div class="card-title">${esc(a.title)}</div>` +
+        (a.source ? `<div class="card-source">来源：${esc(a.source)}</div>` : '') +
+        (desc ? `<div class="card-desc">${esc(desc)}</div>` : '') +
+        (tags.length ? `<div class="card-tags">${tags.map(t => `<span class="card-tag">${esc(t)}</span>`).join('')}</div>` : '');
+    } else if (variant === 'standard') {
+      const tags = (a.tags || []).slice(0, 4);
+      const desc = (a.summary || '').slice(0, 120);
+      el.innerHTML =
+        `<div class="card-top">` +
+          `<span class="card-badge ${pc}">${esc(a.pipeline)}</span>` +
+          `<span class="card-badge">${esc(a.stage)}</span>` +
+          `<span class="card-date">${esc(a.date || '')}</span>` +
+        `</div>` +
+        `<div class="card-title">${esc(a.title)}</div>` +
+        (a.source ? `<div class="card-source">来源：${esc(a.source)}</div>` : '') +
+        (desc ? `<div class="card-desc">${esc(desc)}</div>` : '') +
+        (tags.length ? `<div class="card-tags">${tags.map(t => `<span class="card-tag">${esc(t)}</span>`).join('')}</div>` : '');
+    } else {
+      // Compact: only badge + title
+      el.innerHTML =
         `<span class="card-badge ${pc}">${esc(a.pipeline)}</span>` +
-        `<span class="card-badge">${esc(a.stage)}</span>` +
-        `<span class="card-date">${esc(a.date || '')}</span>` +
-      `</div>` +
-      `<div class="card-title">${esc(a.title)}</div>` +
-      (a.source ? `<div class="card-source">${esc(a.source)}</div>` : '') +
-      (desc ? `<div class="card-desc">${esc(desc)}</div>` : '') +
-      (tags.length ? `<div class="card-tags">${tags.map(t => `<span class="card-tag">${esc(t)}</span>`).join('')}</div>` : '');
+        `<div class="card-title">${esc(a.title)}</div>`;
+    }
     el.addEventListener('click', () => { location.hash = 'd/' + a.id; });
     return el;
   }
@@ -275,6 +344,31 @@
     if (S.flt.stage) t += ` · ${S.flt.stage}`;
     if (S.q) t += ` · 搜索："${S.q}"`;
     E.cnt.textContent = t;
+  }
+
+  function createSectionHeader(label) {
+    const el = document.createElement('div');
+    el.className = 'section-header';
+    el.textContent = label;
+    return el;
+  }
+
+  function updateMastheadMeta() {
+    const total = S.total || S.arts.length;
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = now.getMonth() + 1;
+    const meta = document.getElementById('mastheadMeta');
+    if (meta) {
+      meta.textContent = `${y}年${m}月 · ${total}篇`;
+    }
+  }
+
+  function formatDateChinese(d) {
+    if (!d) return '';
+    const parts = d.split('-');
+    if (parts.length < 3) return d;
+    return `${parts[0]}年${parseInt(parts[1])}月${parseInt(parts[2])}日`;
   }
 
   /* ---- Detail ---- */
