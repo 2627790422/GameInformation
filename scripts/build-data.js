@@ -23,6 +23,9 @@ const OBSIDIAN_REPO = process.env.GITHUB_TOKEN
   ? `https://${process.env.GITHUB_TOKEN}@github.com/2627790422/ObsidianNote.git`
   : 'https://github.com/2627790422/ObsidianNote.git';
 
+// 防止 Git 所有权检测报错（Vercel 构建环境需要）
+try { execSync('git config --global --add safe.directory \'*\'', { stdio: 'pipe' }); } catch {}
+
 if (process.env.VAULT_PATH) {
   // 本地开发：使用环境变量指定的路径
   console.log('[build] 使用本地 Vault:', process.env.VAULT_PATH);
