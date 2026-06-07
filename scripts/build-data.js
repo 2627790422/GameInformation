@@ -31,7 +31,7 @@ if (process.env.VAULT_PATH) {
   // 本地开发：使用环境变量指定的路径
   console.log('[build] 使用本地 Vault:', process.env.VAULT_PATH);
 } else if (fs.existsSync(path.join(REF_DIR, '.git'))) {
-  // Vercel 缓存：git pull
+  // Vercel 缓存有完整 git 仓库：git pull
   console.log('[build] git pull 最新笔记...');
   try {
     if (process.env.GITHUB_TOKEN) {
@@ -45,8 +45,12 @@ if (process.env.VAULT_PATH) {
     console.error('[build] git pull 失败，清理后重新 clone');
     fs.rmSync(REF_DIR, { recursive: true, force: true });
   }
+} else if (fs.existsSync(REF_DIR)) {
+  // 构建缓存恢复了目录但没有 .git（Vercel 缓存不包含 .git），删除后重新 clone
+  console.log('[build] 缓存目录无 .git，清理后重新 clone');
+  fs.rmSync(REF_DIR, { recursive: true, force: true });
 }
-// 走到这里说明需要 clone（首次或 pull 失败后重试）
+// 走到这里说明需要 clone（首次 / pull 失败 / 缓存过期）
 if (!process.env.VAULT_PATH && !fs.existsSync(REF_DIR)) {
   // Vercel 构建：clone（如果目录有残留则先清理）
   if (fs.existsSync(REF_DIR)) {
