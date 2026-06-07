@@ -38,10 +38,15 @@ if (process.env.VAULT_PATH) {
     fs.rmSync(REF_DIR, { recursive: true, force: true });
   }
   console.log('[build] clone Obsidian Vault...');
-  execSync(`git clone --depth 1 ${OBSIDIAN_REPO} reference`, {
-    cwd: path.join(__dirname, '..'),
-    stdio: ['pipe', 'inherit', 'pipe'],
-  });
+  try {
+    execSync(`git clone --depth 1 ${OBSIDIAN_REPO} reference`, {
+      cwd: path.join(__dirname, '..'),
+      stdio: 'inherit',
+    });
+  } catch (gitError) {
+    console.error('[build] git clone 失败:', gitError.stderr?.toString());
+    throw gitError;
+  }
 }
 
 // 设置 scanner 读取路径
