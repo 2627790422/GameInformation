@@ -34,13 +34,7 @@ if (process.env.VAULT_PATH) {
   // Vercel 缓存有完整 git 仓库：git pull
   console.log('[build] git pull 最新笔记...');
   try {
-    if (process.env.GITHUB_TOKEN) {
-      execSync(`git -c http.extraHeader="Authorization: Bearer ${process.env.GITHUB_TOKEN}" pull --ff-only`, {
-        cwd: REF_DIR, stdio: 'inherit',
-      });
-    } else {
-      execSync('git pull --ff-only', { cwd: REF_DIR, stdio: 'inherit' });
-    }
+    execSync('git pull --ff-only', { cwd: REF_DIR, stdio: 'inherit' });
   } catch (pullError) {
     console.error('[build] git pull 失败，清理后重新 clone');
     fs.rmSync(REF_DIR, { recursive: true, force: true });
@@ -58,9 +52,7 @@ if (!process.env.VAULT_PATH && !fs.existsSync(REF_DIR)) {
     fs.rmSync(REF_DIR, { recursive: true, force: true });
   }
   console.log('[build] clone Obsidian Vault...');
-  const cloneCmd = process.env.GITHUB_TOKEN
-    ? `git -c http.extraHeader="Authorization: Bearer ${process.env.GITHUB_TOKEN}" clone --depth 1 https://github.com/2627790422/ObsidianNote.git reference`
-    : `git clone --depth 1 https://github.com/2627790422/ObsidianNote.git reference`;
+  const cloneCmd = 'git clone --depth 1 https://github.com/2627790422/ObsidianNote.git reference';
   try {
     execSync(cloneCmd, {
       cwd: path.join(__dirname, '..'),
