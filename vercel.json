@@ -1,6 +1,5 @@
 {
   "version": 2,
-  "buildCommand": "node scripts/build-data.js",
   "routes": [
     { "src": "/api/articles/(?<id>[^/]+)", "dest": "/api/articles?id=$id" },
     { "src": "/api/(.*)", "dest": "/api/$1" },

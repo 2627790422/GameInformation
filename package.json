@@ -5,7 +5,10 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "node --watch server.js"
+    "dev": "node --watch server.js",
+    "build": "node scripts/build-data.js",
+    "build-data": "node scripts/build-data.js",
+    "deploy": "node scripts/build-data.js && vercel --prod"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.105.3",
