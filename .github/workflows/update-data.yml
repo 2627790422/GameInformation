@@ -22,18 +22,32 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Clone ObsidianNote (sparse-checkout)
+      - name: Download ObsidianNote articles
         run: |
-          rm -rf reference
-          git clone --filter=blob:none --no-checkout --depth 1 https://github.com/2627790422/ObsidianNote.git reference
-          cd reference
-          git sparse-checkout init --cone
-          git sparse-checkout set \
-            "游戏设计/游戏资讯/资讯" \
-            "游戏设计/游戏跟踪/已分析" \
-            "游戏设计/自主采集/拆解/拆解结果" \
-            "AI/AI资讯"
-          git checkout
+          rm -rf reference && mkdir -p reference
+
+          # 一次 API 调用获取全仓库文件树
+          echo "=== Fetching file tree from GitHub ==="
+          gh api "repos/2627790422/ObsidianNote/git/trees/HEAD?recursive=1" \
+            --jq '.tree[] | select(.type=="blob" and (.path | endswith(".md"))) | .path' \
+            > /tmp/files.txt
+          echo "  Total .md files: $(wc -l < /tmp/files.txt)"
+
+          # 只下载 4 个目标目录下的 .md 文件（走 raw.githubusercontent.com 不限速）
+          count=0
+          TARGETS=("游戏设计/游戏资讯/资讯" "游戏设计/游戏跟踪/已分析" "游戏设计/自主采集/拆解/拆解结果" "AI/AI资讯")
+
+          while read -r fpath; do
+            for prefix in "${TARGETS[@]}"; do
+              if echo "$fpath" | grep -q "^${prefix}/"; then
+                mkdir -p "reference/$(dirname "$fpath")"
+                curl -sL "https://raw.githubusercontent.com/2627790422/ObsidianNote/main/$fpath" -o "reference/$fpath"
+                count=$((count + 1))
+                break
+              fi
+            done
+          done < /tmp/files.txt
+          echo "=== Downloaded $count articles ==="
 
       - name: Build data
         run: node scripts/build-data.js
