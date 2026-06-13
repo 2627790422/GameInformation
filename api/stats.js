@@ -1,15 +1,31 @@
 /**
  * api/stats.js — Vercel Serverless Function
+ * 优先从预构建的 data/stats.json 读取统计
+ * JSON 不存在时回退到 scanner 动态计算
  */
 
 const scanner = require('../lib/scanner');
 
-scanner.scanAll();
+// 预构建数据
+let prebuiltStats = null;
+
+try {
+  prebuiltStats = require('../data/stats.json');
+  console.log('[api/stats] 已加载预构建统计数据: total =', prebuiltStats.total);
+} catch (e) {
+  console.warn('[api/stats] 预构建统计不可用，回退到 scanner:', e.message);
+  scanner.scanAll();
+}
 
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   if (req.method === 'OPTIONS') return res.status(200).end();
 
+  if (prebuiltStats) {
+    return res.json(prebuiltStats);
+  }
+
+  // 回退：动态计算统计
   const articles = scanner.getArticles();
 
   const pipelineCounts = {};
