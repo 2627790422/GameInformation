@@ -28,7 +28,7 @@ jobs:
         run: node scripts/download-articles.js
 
       - name: Pull latest remote
-        run: git pull --rebase origin master
+        run: git pull --rebase --autostash origin master
 
       - name: Build data
         env:
