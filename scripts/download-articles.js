@@ -8,9 +8,15 @@ const https = require('https');
 const fs = require('fs');
 const path = require('path');
 
-const REPO = '2627790422/ObsidianNote';
+const API_REPO = '2627790422/ObsidianNote';
 const TOKEN = process.env.GH_PAT || '';
 const REF_DIR = path.join(__dirname, '..', 'reference');
+
+// 构造 raw 下载 URL（不依赖 API 返回的临时 download_url）
+function rawUrl(filePath) {
+  const safePath = filePath.split('/').map(encodeURIComponent).join('/');
+  return `https://raw.githubusercontent.com/${API_REPO}/main/${safePath}`;
+}
 
 // 目标目录（相对于仓库根）
 const TARGET_DIRS = [
@@ -62,7 +68,7 @@ function apiRequest(urlPath) {
 async function fetchDirectory(dirPath) {
   const results = [];
   const encoded = encodeURIComponent(dirPath);
-  const data = await apiRequest(`/repos/${REPO}/contents/${encoded}`);
+  const data = await apiRequest(`/repos/${API_REPO}/contents/${encoded}`);
   if (!Array.isArray(data)) {
     console.error(`  [WARN] ${dirPath}: not a directory or not found`);
     return results;
@@ -84,11 +90,27 @@ function downloadFile(downloadUrl, localPath) {
     const dir = path.dirname(localPath);
     fs.mkdirSync(dir, { recursive: true });
     const file = fs.createWriteStream(localPath);
-    https.get(downloadUrl, {
+    file.on('error', (e) => {
+      fs.unlink(localPath, () => {});
+      reject(e);
+    });
+    const req = https.get(downloadUrl, {
       headers: TOKEN ? { 'Authorization': `Bearer ${TOKEN}` } : {},
     }, (res) => {
+      if (res.statusCode >= 400) {
+        file.close();
+        fs.unlink(localPath, () => {});
+        reject(new Error(`HTTP ${res.statusCode} for ${downloadUrl}`));
+        return;
+      }
       if (res.statusCode === 302 || res.statusCode === 301) {
         https.get(res.headers.location, (r2) => {
+          if (r2.statusCode >= 400) {
+            file.close();
+            fs.unlink(localPath, () => {});
+            reject(new Error(`HTTP ${r2.statusCode} redirect`));
+            return;
+          }
           r2.pipe(file);
           file.on('finish', () => { file.close(); resolve(); });
         }).on('error', reject);
@@ -96,7 +118,9 @@ function downloadFile(downloadUrl, localPath) {
       }
       res.pipe(file);
       file.on('finish', () => { file.close(); resolve(); });
-    }).on('error', reject);
+    });
+    req.on('error', reject);
+    req.end();
   });
 }
 
@@ -118,9 +142,13 @@ function downloadFile(downloadUrl, localPath) {
       const files = await fetchDirectory(dir);
       console.log(`[download]   找到 ${files.length} 个 .md 文件`);
       for (const f of files) {
-        const relPath = f.path; // API 返回的 path 即相对路径
+        const relPath = f.path;
         const localPath = path.join(REF_DIR, relPath);
-        await downloadFile(f.download_url, localPath);
+        try {
+          await downloadFile(rawUrl(relPath), localPath);
+        } catch (e) {
+          console.error(`[download]     失败 ${relPath}: ${e.message}`);
+        }
       }
       total += files.length;
     } catch (e) {
