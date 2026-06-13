@@ -41,6 +41,6 @@ jobs:
             echo "No changes"
           else
             git commit -m "auto: update data from ObsidianNote"
-            git pull --rebase origin master
+            git pull --rebase --autostash origin master
             git push
           fi
