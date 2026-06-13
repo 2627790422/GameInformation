@@ -28,6 +28,8 @@ jobs:
         run: node scripts/download-articles.js
 
       - name: Build data
+        env:
+          VAULT_PATH: ${{ github.workspace }}/reference
         run: node scripts/build-data.js
 
       - name: Commit and push if changed
