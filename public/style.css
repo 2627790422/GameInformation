@@ -42,6 +42,8 @@
   --pipe-tr-bg:     #f4ede2;
   --pipe-ai:        #6b3fa0;
   --pipe-ai-bg:     #f0eaf6;
+  --pipe-iv:        #0d7377;
+  --pipe-iv-bg:     #e5f0f0;
   --shadow-sm:      0 1px 2px rgba(0,0,0,0.03);
   --shadow-md:      0 4px 24px rgba(0,0,0,0.06);
   --shadow-lg:      0 12px 48px rgba(0,0,0,0.08);
@@ -71,6 +73,8 @@
   --pipe-tr-bg:     #261f14;
   --pipe-ai:        #9b6ecf;
   --pipe-ai-bg:     #1f1729;
+  --pipe-iv:        #2db5ba;
+  --pipe-iv-bg:     #142728;
   --shadow-sm:      0 1px 2px rgba(0,0,0,0.2);
   --shadow-md:      0 4px 24px rgba(0,0,0,0.3);
   --shadow-lg:      0 12px 48px rgba(0,0,0,0.4);
@@ -308,6 +312,7 @@ body {
 .today-card-tag.pipe-sc { background: var(--pipe-sc-bg); color: var(--pipe-sc); }
 .today-card-tag.pipe-tr { background: var(--pipe-tr-bg); color: var(--pipe-tr); }
 .today-card-tag.pipe-ai { background: var(--pipe-ai-bg); color: var(--pipe-ai); }
+.today-card-tag.pipe-iv { background: var(--pipe-iv-bg); color: var(--pipe-iv); }
 .today-card-title {
   display: block;
   font-family: var(--font-display);
@@ -519,6 +524,8 @@ body {
 .card.standard[data-pipeline="游戏跟踪"] { border-top-color: var(--pipe-tr); }
 .card.hero[data-pipeline="AI资讯"],
 .card.standard[data-pipeline="AI资讯"] { border-top-color: var(--pipe-ai); }
+.card.hero[data-pipeline="访谈跟踪"],
+.card.standard[data-pipeline="访谈跟踪"] { border-top-color: var(--pipe-iv); }
 
 .card-top {
   display: flex;
@@ -542,6 +549,7 @@ body {
 .card-badge.pipe-sc { background: var(--pipe-sc-bg); color: var(--pipe-sc); }
 .card-badge.pipe-tr { background: var(--pipe-tr-bg); color: var(--pipe-tr); }
 .card-badge.pipe-ai { background: var(--pipe-ai-bg); color: var(--pipe-ai); }
+.card-badge.pipe-iv { background: var(--pipe-iv-bg); color: var(--pipe-iv); }
 
 .card-date {
   font-family: var(--font-mono);

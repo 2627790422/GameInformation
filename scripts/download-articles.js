@@ -24,6 +24,7 @@ const TARGET_DIRS = [
   '游戏设计/游戏跟踪/已分析',
   '游戏设计/自主采集/拆解/拆解结果',
   'AI/AI资讯',
+  '外接大脑/访谈跟踪/已分析',
 ];
 
 function apiRequest(urlPath) {

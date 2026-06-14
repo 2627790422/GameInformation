@@ -91,6 +91,7 @@
     if (pipeline === '自主采集') return 'pipe-sc';
     if (pipeline === '游戏跟踪') return 'pipe-tr';
     if (pipeline === 'AI资讯') return 'pipe-ai';
+    if (pipeline === '访谈跟踪') return 'pipe-iv';
     return '';
   }
 
