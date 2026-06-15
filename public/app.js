@@ -47,11 +47,13 @@
   });
 
   /* ---- Month filter init ---- */
+  let _statsCache = null;
   (async function loadMonths() {
     try {
       const r = await fetch('/api/stats');
       if (!r.ok) return;
       const d = await r.json();
+      _statsCache = d;
       const months = (d.monthDistribution || []).map(x => x.month).sort().reverse();
       const row = $('#monthFilters');
       months.forEach(m => {
@@ -65,6 +67,7 @@
       });
       // Re-bind filter chips
       bindFilterChips();
+      updateMastheadMeta();
     } catch (_) {}
   })();
 
@@ -356,12 +359,16 @@
 
   function updateMastheadMeta() {
     const total = S.total || S.arts.length;
-    const now = new Date();
-    const y = now.getFullYear();
-    const m = now.getMonth() + 1;
+    let dateStr = '';
+    if (_statsCache && _statsCache.latestDate) {
+      const parts = _statsCache.latestDate.split('-');
+      if (parts.length >= 3) {
+        dateStr = `更新于${parseInt(parts[1])}月${parseInt(parts[2])}日 · `;
+      }
+    }
     const meta = document.getElementById('mastheadMeta');
     if (meta) {
-      meta.textContent = `${y}年${m}月 · ${total}篇`;
+      meta.textContent = `${dateStr}${total}篇`;
     }
   }
 
