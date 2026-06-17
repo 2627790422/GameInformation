@@ -36,8 +36,8 @@
   --accent-text:    #8e3922;
   --pipe-wx:        #2d8040;
   --pipe-wx-bg:     #e9f2ea;
-  --pipe-sc:        #3568a8;
-  --pipe-sc-bg:     #e8eef6;
+  --pipe-pl:        #3568a8;
+  --pipe-pl-bg:     #e8eef6;
   --pipe-tr:        #b36d2a;
   --pipe-tr-bg:     #f4ede2;
   --pipe-ai:        #6b3fa0;
@@ -67,8 +67,8 @@
   --accent-text:    #e08d74;
   --pipe-wx:        #53b56e;
   --pipe-wx-bg:     #1a261d;
-  --pipe-sc:        #5f8fd4;
-  --pipe-sc-bg:     #171f2a;
+  --pipe-pl:        #5f8fd4;
+  --pipe-pl-bg:     #171f2a;
   --pipe-tr:        #d49440;
   --pipe-tr-bg:     #261f14;
   --pipe-ai:        #9b6ecf;
@@ -309,7 +309,7 @@ body {
   color: var(--text-dim);
 }
 .today-card-tag.pipe-wx { background: var(--pipe-wx-bg); color: var(--pipe-wx); }
-.today-card-tag.pipe-sc { background: var(--pipe-sc-bg); color: var(--pipe-sc); }
+.today-card-tag.pipe-pl { background: var(--pipe-pl-bg); color: var(--pipe-pl); }
 .today-card-tag.pipe-tr { background: var(--pipe-tr-bg); color: var(--pipe-tr); }
 .today-card-tag.pipe-ai { background: var(--pipe-ai-bg); color: var(--pipe-ai); }
 .today-card-tag.pipe-iv { background: var(--pipe-iv-bg); color: var(--pipe-iv); }
@@ -518,8 +518,8 @@ body {
 /* Pipeline accent colors on card top border */
 .card.hero[data-pipeline="微信资讯"],
 .card.standard[data-pipeline="微信资讯"] { border-top-color: var(--pipe-wx); }
-.card.hero[data-pipeline="自主采集"],
-.card.standard[data-pipeline="自主采集"] { border-top-color: var(--pipe-sc); }
+.card.hero[data-pipeline="设计管线"],
+.card.standard[data-pipeline="设计管线"] { border-top-color: var(--pipe-pl); }
 .card.hero[data-pipeline="游戏跟踪"],
 .card.standard[data-pipeline="游戏跟踪"] { border-top-color: var(--pipe-tr); }
 .card.hero[data-pipeline="AI资讯"],
@@ -546,7 +546,7 @@ body {
 }
 /* Pipeline badge colors */
 .card-badge.pipe-wx { background: var(--pipe-wx-bg); color: var(--pipe-wx); }
-.card-badge.pipe-sc { background: var(--pipe-sc-bg); color: var(--pipe-sc); }
+.card-badge.pipe-pl { background: var(--pipe-pl-bg); color: var(--pipe-pl); }
 .card-badge.pipe-tr { background: var(--pipe-tr-bg); color: var(--pipe-tr); }
 .card-badge.pipe-ai { background: var(--pipe-ai-bg); color: var(--pipe-ai); }
 .card-badge.pipe-iv { background: var(--pipe-iv-bg); color: var(--pipe-iv); }

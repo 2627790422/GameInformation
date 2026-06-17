@@ -71,7 +71,7 @@ app.get('/api/articles', (req, res) => {
     result = result.filter(a => stages.includes(a.stage));
   }
 
-  // 排除筛选（当用户点击了自主采集 chip 时不排除）
+  // 排除筛选（当用户点击了设计管线 chip 时不排除）
   if (exclude) {
     const excludes = exclude.split(',');
     result = result.filter(a => !excludes.includes(a.pipeline));
@@ -149,8 +149,9 @@ app.get('/api/articles/:id', (req, res) => {
     const tags = (target.tags || []).slice(0, 4);
     const desc = (target.summary || '').slice(0, 120);
     const pc = target.pipeline === '微信资讯' ? 'pipe-wx' :
-                target.pipeline === '自主采集' ? 'pipe-sc' :
-                target.pipeline === '游戏跟踪' ? 'pipe-tr' : '';
+                target.pipeline === '设计管线' ? 'pipe-pl' :
+                target.pipeline === '游戏跟踪' ? 'pipe-tr' :
+                target.pipeline === 'AI资讯' ? 'pipe-ai' : '';
     return `<a href="#d/${target.id}" class="wiki-card" data-pipeline="${target.pipeline}">
       <div class="card-top">
         <span class="card-badge ${pc}">${target.pipeline}</span>

@@ -91,7 +91,7 @@
   /* ---- Pipeline color helpers ---- */
   function pipeClass(pipeline) {
     if (pipeline === '微信资讯') return 'pipe-wx';
-    if (pipeline === '自主采集') return 'pipe-sc';
+    if (pipeline === '设计管线') return 'pipe-pl';
     if (pipeline === '游戏跟踪') return 'pipe-tr';
     if (pipeline === 'AI资讯') return 'pipe-ai';
     if (pipeline === '访谈跟踪') return 'pipe-iv';

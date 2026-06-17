@@ -108,9 +108,10 @@ for (const a of articles) {
     const tags = (target.tags || []).slice(0, 4);
     const desc = (target.summary || '').slice(0, 120);
     const pc = target.pipeline === '微信资讯' ? 'pipe-wx' :
-                target.pipeline === '自主采集' ? 'pipe-sc' :
+                target.pipeline === '设计管线' ? 'pipe-pl' :
                 target.pipeline === '游戏跟踪' ? 'pipe-tr' :
-                target.pipeline === 'AI资讯' ? 'pipe-ai' : '';
+                target.pipeline === 'AI资讯' ? 'pipe-ai' :
+                target.pipeline === '访谈跟踪' ? 'pipe-iv' : '';
     return `<a href="#d/${target.id}" class="wiki-card" data-pipeline="${target.pipeline}">
       <div class="card-top">
         <span class="card-badge ${pc}">${target.pipeline}</span>
