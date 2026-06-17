@@ -68,7 +68,7 @@ function apiRequest(urlPath) {
 /** 递归获取目录下所有 .md 文件（处理分页和子目录） */
 async function fetchDirectory(dirPath) {
   const results = [];
-  const encoded = encodeURIComponent(dirPath);
+  const encoded = dirPath.split('/').map(encodeURIComponent).join('/');
   const data = await apiRequest(`/repos/${API_REPO}/contents/${encoded}`);
   if (!Array.isArray(data)) {
     console.error(`  [WARN] ${dirPath}: not a directory or not found`);
