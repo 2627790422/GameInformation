@@ -182,18 +182,18 @@
     if (reset) {
       S.rendered = 0;
 
-      // Standard: first 7 articles (indices 0-6), no hero — sorted by time
+      // Standard: first 9 articles (indices 0-8), no hero — sorted by time
       if (S.arts.length >= 1) {
         E.tl.appendChild(createSectionHeader('最新分析'));
-        const end = Math.min(7, S.arts.length);
+        const end = Math.min(9, S.arts.length);
         for (let i = 0; i < end; i++) {
           E.tl.appendChild(card(S.arts[i], 'standard'));
         }
         S.rendered = end;
       }
 
-      // Compact: articles 8+ (index 7+)
-      if (S.arts.length >= 8) {
+      // Compact: articles 10+ (index 9+)
+      if (S.arts.length >= 10) {
         const rule = document.createElement('div');
         rule.className = 'section-rule';
         E.tl.appendChild(rule);
@@ -202,7 +202,7 @@
         // Group by month
         const monthName = d => (d || '').substring(0, 7) || '未知日期';
         let lastMonth = '';
-        for (let i = 7; i < S.arts.length; i++) {
+        for (let i = 9; i < S.arts.length; i++) {
           const m = monthName(S.arts[i].date);
           if (m !== lastMonth) {
             const sep = document.createElement('div');
