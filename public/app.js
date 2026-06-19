@@ -181,21 +181,12 @@
 
     if (reset) {
       S.rendered = 0;
-      // Hero: first article
-      if (S.arts.length >= 1) {
-        E.tl.appendChild(createSectionHeader('头条聚焦'));
-        E.tl.appendChild(card(S.arts[0], 'hero'));
-        S.rendered = 1;
-      }
 
-      // Standard: articles 2-7 (indices 1-6)
-      if (S.arts.length >= 2) {
-        const rule = document.createElement('div');
-        rule.className = 'section-rule';
-        E.tl.appendChild(rule);
+      // Standard: first 7 articles (indices 0-6), no hero — sorted by time
+      if (S.arts.length >= 1) {
         E.tl.appendChild(createSectionHeader('最新分析'));
         const end = Math.min(7, S.arts.length);
-        for (let i = 1; i < end; i++) {
+        for (let i = 0; i < end; i++) {
           E.tl.appendChild(card(S.arts[i], 'standard'));
         }
         S.rendered = end;
@@ -269,20 +260,7 @@
     el.setAttribute('data-pipeline', a.pipeline);
     const pc = pipeClass(a.pipeline);
 
-    if (variant === 'hero') {
-      const tags = (a.tags || []).slice(0, 4);
-      const desc = (a.summary || '').slice(0, 250);
-      el.innerHTML =
-        `<div class="card-top">` +
-          `<span class="card-badge ${pc}">${esc(a.pipeline)}</span>` +
-          `<span class="card-badge">${esc(a.stage)}</span>` +
-          `<span class="card-date">${formatDateChinese(a.date)}</span>` +
-        `</div>` +
-        `<div class="card-title">${esc(a.title)}</div>` +
-        (a.source ? `<div class="card-source">来源：${esc(a.source)}</div>` : '') +
-        (desc ? `<div class="card-desc">${esc(desc)}</div>` : '') +
-        (tags.length ? `<div class="card-tags">${tags.map(t => `<span class="card-tag">${esc(t)}</span>`).join('')}</div>` : '');
-    } else if (variant === 'standard') {
+    if (variant === 'standard') {
       const tags = (a.tags || []).slice(0, 4);
       const desc = (a.summary || '').slice(0, 120);
       el.innerHTML =
@@ -370,13 +348,6 @@
     if (meta) {
       meta.textContent = `${dateStr}${total}篇`;
     }
-  }
-
-  function formatDateChinese(d) {
-    if (!d) return '';
-    const parts = d.split('-');
-    if (parts.length < 3) return d;
-    return `${parts[0]}年${parseInt(parts[1])}月${parseInt(parts[2])}日`;
   }
 
   /* ---- Detail ---- */

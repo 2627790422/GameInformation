@@ -441,32 +441,6 @@ body {
   box-shadow: var(--shadow-md);
 }
 
-/* === Hero Card === */
-.card.hero {
-  grid-column: 1 / -1;
-  border-top: 5px solid var(--accent);
-  padding: var(--sd) var(--sd);
-  flex-direction: column;
-}
-.card.hero .card-title {
-  font-size: 1.55rem;
-  font-weight: 900;
-  line-height: 1.3;
-  margin-bottom: 10px;
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-.card.hero .card-source {
-  font-size: 0.82rem;
-  color: var(--text-dim);
-  margin-bottom: 10px;
-}
-.card.hero .card-desc {
-  -webkit-line-clamp: 4;
-}
-
 /* === Standard Card === */
 .card.standard {
   grid-column: span 4;
@@ -516,15 +490,10 @@ body {
 }
 
 /* Pipeline accent colors on card top border */
-.card.hero[data-pipeline="微信资讯"],
 .card.standard[data-pipeline="微信资讯"] { border-top-color: var(--pipe-wx); }
-.card.hero[data-pipeline="设计管线"],
 .card.standard[data-pipeline="设计管线"] { border-top-color: var(--pipe-pl); }
-.card.hero[data-pipeline="游戏跟踪"],
 .card.standard[data-pipeline="游戏跟踪"] { border-top-color: var(--pipe-tr); }
-.card.hero[data-pipeline="AI资讯"],
 .card.standard[data-pipeline="AI资讯"] { border-top-color: var(--pipe-ai); }
-.card.hero[data-pipeline="访谈跟踪"],
 .card.standard[data-pipeline="访谈跟踪"] { border-top-color: var(--pipe-iv); }
 
 .card-top {
