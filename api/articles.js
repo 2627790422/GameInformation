@@ -81,7 +81,7 @@ module.exports = async (req, res) => {
 
   const list = articles.map(a => ({
     id: a.id, title: a.title, pipeline: a.pipeline, stage: a.stage,
-    date: a.date, summary: a.summary, tags: a.tags, source: a.source, url: a.url,
+    date: a.date, summary: (a.summary || '').replace(/<!--[\s\S]*?-->/g, '').trim(), tags: a.tags, source: a.source, url: a.url,
   }));
 
   res.json({ total, articles: list });

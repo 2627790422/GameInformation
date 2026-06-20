@@ -1,4 +1,6 @@
-# Vercel + Supabase 迁移计划
+# Vercel + Supabase 迁移计划（已废弃）
+
+> ⚠️ 此方案已废弃。最终采用预构建数据方案。当前架构见 `STATUS.md` 和项目根 `CLAUDE.md`。
 
 ## 目标
 

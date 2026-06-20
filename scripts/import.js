@@ -1,7 +1,7 @@
 /**
  * scripts/import.js — 将 reference/ 目录的 .md 文件导入 Supabase
  * 用法: node scripts/import.js
- * 环境变量: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY（脚本内硬编码）
+ * 环境变量: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
  */
 
 const https = require('https');
@@ -9,8 +9,8 @@ const scanner = require('../lib/scanner');
 const { marked } = require('marked');
 const { convertMermaidBlocks } = require('../lib/parser');
 
-const SUPABASE_URL = 'https://gfzkhdhzqhphzteflxxk.supabase.co';
-const SUPABASE_KEY = 'sb_secret_9Eb8_sfmDlX2KuPel-mSsA_ahpeMo_D';
+const SUPABASE_URL = process.env.SUPABASE_URL || '';
+const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 
 marked.setOptions({ breaks: true, gfm: true });
 

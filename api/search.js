@@ -106,7 +106,7 @@ module.exports = async (req, res) => {
     total,
     articles: sliced.map(a => ({
       id: a.id, title: a.title, pipeline: a.pipeline, stage: a.stage,
-      date: a.date, summary: a.summary, tags: a.tags, source: a.source, url: a.url,
+      date: a.date, summary: (a.summary || '').replace(/<!--[\s\S]*?-->/g, '').trim(), tags: a.tags, source: a.source, url: a.url,
       _score: a._score,
     })),
   });
