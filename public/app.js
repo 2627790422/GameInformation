@@ -33,7 +33,7 @@
 
   /* ---- State ---- */
   const S = {
-    activeModule: 'games',
+    activeModule: 'ai',
     arts: [],
     view: 'timeline',
     id: null,
