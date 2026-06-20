@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>游戏资讯 · Game Research Archive</title>
+  <title>游戏 &amp; AI 研究 · Game &amp; AI Research Archive</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,400;0,500;1,400&family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@400;600;700;900&display=swap" rel="stylesheet">
@@ -16,8 +16,8 @@
   <header class="site-head">
     <div class="head-inner">
       <a class="brand" href="#" id="homeBtn">
-        <span class="brand-cn">游 戏 资 讯</span>
-        <span class="brand-en">Game Research Archive</span>
+        <span class="brand-cn">游 戏 &amp; A I 研 究</span>
+        <span class="brand-en">Game &amp; AI Research Archive</span>
       </a>
       <div class="masthead-meta" id="mastheadMeta"></div>
     </div>
@@ -37,40 +37,63 @@
     </button>
   </div>
 
-  <!-- Filters -->
-  <nav class="filter-strip">
-    <div class="filter-row">
-      <span class="filter-label">分类</span>
-      <button class="f-chip active" data-key="pipeline" data-value="">全部</button>
-      <button class="f-chip" data-key="pipeline" data-value="微信资讯">游戏资讯</button>
-      <button class="f-chip" data-key="pipeline" data-value="游戏跟踪">游戏跟踪</button>
-      <button class="f-chip" data-key="pipeline" data-value="设计管线">设计管线</button>
-      <button class="f-chip" data-key="pipeline" data-value="AI资讯">AI资讯</button>
-      <button class="f-chip" data-key="pipeline" data-value="访谈跟踪">访谈跟踪</button>
-    </div>
-    <div class="filter-row" id="monthFilters">
-      <span class="filter-label">月份</span>
-      <button class="f-chip active" data-key="month" data-value="">全部</button>
-    </div>
+  <!-- Module Nav -->
+  <nav class="module-strip">
+    <a href="#s" class="module-stats-link">统计 &rarr;</a>
   </nav>
 
   <!-- Main -->
   <main class="main-wrap">
 
-    <!-- Timeline View -->
-    <section id="timelineView" class="view active">
-      <div class="feed-meta">
-        <span id="articleCount"></span>
-        <span style="float:right">
-          <a href="#s" class="stats-link">统计 &rarr;</a>
-        </span>
-      </div>
-      <div class="card-grid" id="timeline"></div>
-      <div class="blank-slate" id="emptyState">
-        <p class="blank-icon">&mdash;</p>
-        <p class="blank-msg">没有找到匹配的文章</p>
-        <p class="blank-sub">试试调整筛选条件或更换搜索关键词</p>
-      </div>
+    <!-- Dual Panel View -->
+    <section id="dualView" class="view active">
+      <div class="dual-layout">
+
+        <!-- LEFT: Games Module -->
+        <div class="panel panel-games" id="gamesPanel">
+          <div class="panel-head">
+            <h2 class="panel-title">游 戏</h2>
+            <span class="panel-count" id="gamesCount"></span>
+          </div>
+          <nav class="panel-filter-strip" id="gamesFilters">
+            <button class="pf-chip active" data-module="games" data-pipeline="">全部</button>
+            <button class="pf-chip" data-module="games" data-pipeline="微信资讯">游戏资讯</button>
+            <button class="pf-chip" data-module="games" data-pipeline="游戏跟踪">游戏跟踪</button>
+            <button class="pf-chip" data-module="games" data-pipeline="设计管线">设计管线</button>
+          </nav>
+          <div class="panel-card-grid" id="gamesGrid"></div>
+          <div class="panel-empty" id="gamesEmpty">
+            <p class="blank-icon">&mdash;</p>
+            <p class="blank-msg">没有找到匹配的文章</p>
+            <p class="blank-sub">试试调整筛选条件或更换搜索关键词</p>
+          </div>
+          <div class="panel-load-more" id="gamesLoadMore"></div>
+        </div>
+
+        <!-- Divider -->
+        <div class="panel-divider"></div>
+
+        <!-- RIGHT: AI Module -->
+        <div class="panel panel-ai" id="aiPanel">
+          <div class="panel-head">
+            <h2 class="panel-title">A I</h2>
+            <span class="panel-count" id="aiCount"></span>
+          </div>
+          <nav class="panel-filter-strip" id="aiFilters">
+            <button class="pf-chip active" data-module="ai" data-pipeline="">全部</button>
+            <button class="pf-chip" data-module="ai" data-pipeline="AI资讯">AI资讯</button>
+            <button class="pf-chip" data-module="ai" data-pipeline="访谈跟踪">访谈跟踪</button>
+          </nav>
+          <div class="panel-card-grid" id="aiGrid"></div>
+          <div class="panel-empty" id="aiEmpty">
+            <p class="blank-icon">&mdash;</p>
+            <p class="blank-msg">没有找到匹配的文章</p>
+            <p class="blank-sub">试试调整筛选条件或更换搜索关键词</p>
+          </div>
+          <div class="panel-load-more" id="aiLoadMore"></div>
+        </div>
+
+      </div><!-- /.dual-layout -->
     </section>
 
     <!-- Detail View -->

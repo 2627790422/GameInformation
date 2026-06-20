@@ -378,9 +378,188 @@ body {
   font-weight: 500;
 }
 
+/* === Module Nav Strip === */
+.module-strip {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 0 var(--sl) var(--sm);
+  display: flex;
+  justify-content: flex-end;
+}
+
+.module-stats-link {
+  font-family: var(--font-mono);
+  font-size: 0.64rem;
+  color: var(--text-dim);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.module-stats-link:hover { color: var(--accent-text); }
+
+/* === Dual Panel Layout === */
+.dual-layout {
+  display: grid;
+  grid-template-columns: 1fr 1px 1fr;
+  gap: 0;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.panel {
+  padding: 0 var(--sd);
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.panel-games { padding-right: calc(var(--panel-gap, 32px) / 2); }
+.panel-ai    { padding-left: calc(var(--panel-gap, 32px) / 2); }
+
+.panel-divider {
+  width: 1px;
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    var(--border) 15%,
+    var(--border) 85%,
+    transparent 100%
+  );
+}
+
+/* Panel Header */
+.panel-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: var(--sm);
+  padding-bottom: var(--sm);
+  border-bottom: 3px double var(--text);
+}
+
+.panel-title {
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  font-weight: 800;
+  letter-spacing: 0.15em;
+  color: var(--text);
+}
+
+.panel-count {
+  font-family: var(--font-mono);
+  font-size: 0.58rem;
+  color: var(--text-dim);
+}
+
+/* Panel Filter Chips */
+.panel-filter-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-bottom: var(--sd);
+}
+
+.pf-chip {
+  padding: 3px 11px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: transparent;
+  color: var(--text-dim);
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  cursor: pointer;
+  transition: all 0.2s var(--ease);
+  white-space: nowrap;
+}
+
+.pf-chip:hover {
+  color: var(--text);
+  border-color: var(--border-focus);
+}
+
+.pf-chip.active {
+  background: var(--accent-soft);
+  color: var(--accent-text);
+  border-color: var(--accent);
+  font-weight: 500;
+}
+
+/* Panel Card Grid */
+.panel-card-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex: 1;
+}
+
+/* Cards inside panels: single-column, left-border accent instead of top-border */
+.panel .card {
+  border-left: 4px solid var(--accent);
+  border-top: none;
+  border-radius: 0 var(--radius) var(--radius) 0;
+}
+
+.panel .card.standard,
+.panel .card.compact {
+  grid-column: auto;
+}
+
+.panel .card.standard {
+  border-top: none;
+}
+
+.panel .card.compact {
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+}
+
+.panel .card[data-pipeline="微信资讯"] { border-left-color: var(--pipe-wx); }
+.panel .card[data-pipeline="设计管线"] { border-left-color: var(--pipe-pl); }
+.panel .card[data-pipeline="游戏跟踪"] { border-left-color: var(--pipe-tr); }
+.panel .card[data-pipeline="AI资讯"]   { border-left-color: var(--pipe-ai); }
+.panel .card[data-pipeline="访谈跟踪"] { border-left-color: var(--pipe-iv); }
+
+/* Panel Empty State */
+.panel-empty {
+  display: none;
+  text-align: center;
+  padding: var(--sl) 0;
+}
+
+.panel-empty .blank-icon {
+  font-size: 2rem;
+  margin-bottom: var(--sm);
+  font-family: var(--font-display);
+  color: var(--text-muted);
+}
+
+.panel-empty .blank-msg {
+  font-size: 0.9rem;
+  color: var(--text-sec);
+  margin-bottom: 4px;
+}
+
+.panel-empty .blank-sub {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+}
+
+/* Panel Load More */
+.panel-load-more {
+  text-align: center;
+  padding: var(--sd) 0 var(--sl);
+}
+
+.panel-load-more .load-more-btn {
+  font-size: 0.78rem;
+  padding: 8px 32px;
+}
+
 /* === Main Content === */
 .main-wrap {
-  max-width: 960px;
+  max-width: 1400px;
   margin: 0 auto;
   padding: var(--sl);
 }
@@ -1130,12 +1309,36 @@ body {
 .mermaid-lb-close:hover { color: #111; }
 
 /* === Responsive === */
+@media (max-width: 1100px) {
+  .dual-layout {
+    grid-template-columns: 1fr;
+    gap: var(--sl) 0;
+  }
+
+  .panel-divider {
+    height: 1px;
+    width: 100%;
+    background: linear-gradient(
+      to right,
+      transparent 0%,
+      var(--border) 15%,
+      var(--border) 85%,
+      transparent 100%
+    );
+  }
+
+  .panel-games { padding-right: 0; }
+  .panel-ai    { padding-left: 0; }
+
+  .main-wrap { max-width: 960px; }
+}
+
 @media (max-width: 860px) {
   html { font-size: 15px; }
   .site-head { padding-left: var(--sd); padding-right: var(--sd); }
   .main-wrap { padding: var(--sd); }
   .toolbar { padding-left: var(--sd); padding-right: var(--sd); }
-  .filter-strip { padding-left: var(--sd); padding-right: var(--sd); }
+  .module-strip { padding-left: var(--sd); padding-right: var(--sd); }
   .search-field { width: 180px; }
   .search-field:focus { width: 200px; }
   .card-grid { grid-template-columns: 1fr; max-width: 100%; }
@@ -1151,6 +1354,12 @@ body {
   .stat-hero { grid-template-columns: repeat(2, 1fr); }
   .stat-row-name { min-width: 110px; font-size: 0.78rem; }
   .toc-sidebar { display: none; }
+
+  /* Stack compact cards in panels on mobile */
+  .panel .card.compact {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 }
 
 @media (max-width: 480px) {

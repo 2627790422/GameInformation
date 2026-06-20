@@ -151,7 +151,8 @@ app.get('/api/articles/:id', (req, res) => {
     const pc = target.pipeline === '微信资讯' ? 'pipe-wx' :
                 target.pipeline === '设计管线' ? 'pipe-pl' :
                 target.pipeline === '游戏跟踪' ? 'pipe-tr' :
-                target.pipeline === 'AI资讯' ? 'pipe-ai' : '';
+                target.pipeline === 'AI资讯' ? 'pipe-ai' :
+                target.pipeline === '访谈跟踪' ? 'pipe-iv' : '';
     return `<a href="#d/${target.id}" class="wiki-card" data-pipeline="${target.pipeline}">
       <div class="card-top">
         <span class="card-badge ${pc}">${target.pipeline}</span>
