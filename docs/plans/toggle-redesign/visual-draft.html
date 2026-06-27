@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>模块切换 — 视觉对比稿</title>
+<style>
+  /* === 复用项目设计 token（精简版，自包含） === */
+  :root {
+    --font-display: "Noto Serif SC", "Source Han Serif SC", serif;
+    --font-body: "Noto Sans SC", "Source Han Sans SC", system-ui, sans-serif;
+    --font-mono: "DM Mono", "Fira Code", monospace;
+    --radius: 5px;
+    --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+  }
+  [data-theme="light"] {
+    --bg: #f6f3ed;
+    --bg-card: #fefcf8;
+    --border: #e2dbcf;
+    --border-focus: #c7bda8;
+    --text: #1b1713;
+    --text-sec: #5a5349;
+    --text-dim: #9a9183;
+    --text-muted: #bfb8ab;
+    --accent: #b64e34;
+    --accent-soft: #f4e4dd;
+    --accent-text: #8e3922;
+  }
+  [data-theme="dark"] {
+    --bg: #161411;
+    --bg-card: #1e1c19;
+    --border: #34302a;
+    --border-focus: #4a4439;
+    --text: #e8e3da;
+    --text-sec: #b5ad9f;
+    --text-dim: #7a7366;
+    --text-muted: #5b554a;
+    --accent: #d4765a;
+    --accent-soft: #3a251c;
+    --accent-text: #e08d74;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family: var(--font-body);
+    background: var(--bg);
+    color: var(--text);
+    transition: background 0.5s var(--ease), color 0.5s var(--ease);
+    min-height: 100vh;
+    padding-bottom: 60px;
+  }
+
+  /* === 标题区 === */
+  .page-head {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 40px 36px 0;
+    text-align: center;
+  }
+  .page-head h1 {
+    font-family: var(--font-display);
+    font-size: 1.6rem; font-weight: 800;
+    letter-spacing: 0.06em;
+    margin-bottom: 4px;
+  }
+  .page-head p { color: var(--text-dim); font-size: 0.88rem; margin-bottom: 28px; }
+
+  /* === 分段标题 === */
+  .section-label {
+    max-width: 960px; margin: 40px auto 12px;
+    padding: 0 36px;
+    font-family: var(--font-mono);
+    font-size: 0.65rem; letter-spacing: 0.08em;
+    color: var(--text-dim); text-transform: uppercase;
+    border-bottom: 1px solid var(--border); padding-bottom: 8px;
+  }
+
+  /* === 模拟页头 === */
+  .mock-site-head {
+    max-width: 960px; margin: 0 auto;
+    border-bottom: 3px double var(--text);
+    padding: 36px 36px 0;
+    text-align: center;
+    transition: border-color 0.5s;
+  }
+  .mock-brand {
+    font-family: var(--font-display);
+    font-size: 1.5rem; font-weight: 800;
+    letter-spacing: 0.12em;
+  }
+
+  /* ============================================================
+     A. 现状（当前线上样式）— 紧凑折叠
+     ============================================================ */
+  .cur-toggle {
+    position: sticky; top: 0; z-index: 300;
+    max-width: 960px; margin: 0 auto;
+    background: color-mix(in srgb, var(--bg) 94%, transparent);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid transparent;
+    overflow: hidden;
+  }
+  .cur-toggle:hover {
+    border-bottom-color: var(--border);
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  }
+  .cur-trigger {
+    display: flex; align-items: center; justify-content: center;
+    gap: 4px; height: 26px; cursor: pointer; user-select: none;
+  }
+  .cur-current {
+    font-family: var(--font-display);
+    font-size: 0.72rem; font-weight: 600;
+    letter-spacing: 0.08em; color: var(--text-dim);
+  }
+  .cur-toggle:hover .cur-current { color: var(--text); }
+  .cur-arrow {
+    font-size: 0.52rem; color: var(--text-muted);
+    transition: transform 0.25s;
+  }
+  .cur-toggle:hover .cur-arrow { transform: rotate(180deg); }
+  .cur-panel {
+    display: flex; justify-content: center; gap: 0;
+    padding: 0 0 10px;
+    max-height: 0; opacity: 0; overflow: hidden;
+    transition: max-height 0.28s, opacity 0.22s, padding 0.28s;
+  }
+  .cur-toggle:hover .cur-panel { max-height: 60px; opacity: 1; }
+  .cur-btn {
+    padding: 7px 30px;
+    border: 1.5px solid var(--border);
+    background: var(--bg-card);
+    color: var(--text-dim);
+    font-family: var(--font-display);
+    font-size: 0.82rem; font-weight: 600;
+    letter-spacing: 0.06em; cursor: pointer;
+  }
+  .cur-btn:first-child { border-radius: 20px 0 0 20px; }
+  .cur-btn:last-child  { border-radius: 0 20px 20px 0; margin-left: -1px; }
+  .cur-btn:hover { color: var(--text); border-color: var(--border-focus); }
+  .cur-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+  /* ============================================================
+     B. 提案 — 始终可见 pill 切换组
+     ============================================================ */
+  .new-toggle {
+    position: sticky; top: 0; z-index: 300;
+    max-width: 960px; margin: 0 auto;
+    background: color-mix(in srgb, var(--bg) 94%, transparent);
+    backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--border);
+    box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    display: flex; align-items: center; justify-content: center;
+    padding: 10px 0;
+    transition: background 0.5s var(--ease);
+  }
+  .new-toggle .pill-group {
+    display: flex; gap: 0;
+  }
+  .new-toggle .pill-btn {
+    padding: 8px 34px;
+    border: 1.5px solid var(--border);
+    border-radius: 0;
+    background: var(--bg-card);
+    color: var(--text-dim);
+    font-family: var(--font-display);
+    font-size: 0.92rem; font-weight: 600;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    transition: all 0.25s var(--ease);
+    white-space: nowrap;
+    position: relative;
+  }
+  .new-toggle .pill-btn:first-child { border-radius: 22px 0 0 22px; }
+  .new-toggle .pill-btn:last-child { border-radius: 0 22px 22px 0; margin-left: -1px; }
+  .new-toggle .pill-btn:hover {
+    color: var(--text);
+    border-color: var(--border-focus);
+    z-index: 1;
+  }
+  .new-toggle .pill-btn.active {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+    z-index: 2;
+    position: relative;
+  }
+
+  /* 标签提示 — 选中态旁边的小提示 */
+  .new-toggle .module-badge {
+    font-family: var(--font-mono);
+    font-size: 0.55rem;
+    letter-spacing: 0.04em;
+    color: var(--text-dim);
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1px 8px;
+    white-space: nowrap;
+    opacity: 0.7;
+    margin-left: 8px;
+  }
+
+  /* === 模拟卡片区（示意性） === */
+  .mock-content {
+    max-width: 960px; margin: 0 auto; padding: 36px;
+  }
+  .mock-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--accent);
+    border-radius: 0 var(--radius) var(--radius) 0;
+    padding: 22px; margin-bottom: 16px;
+    transition: box-shadow 0.3s;
+  }
+  .mock-card-title {
+    font-family: var(--font-display);
+    font-size: 1.08rem; font-weight: 700;
+    margin-bottom: 6px;
+  }
+  .mock-card-meta { font-size: 0.78rem; color: var(--text-dim); }
+
+  /* === 主题切换按钮 === */
+  .theme-switcher {
+    position: fixed; top: 16px; right: 16px; z-index: 9999;
+    padding: 6px 14px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-card);
+    color: var(--text-sec);
+    font-family: var(--font-mono); font-size: 0.72rem;
+    cursor: pointer;
+  }
+
+  /* === 标注 === */
+  .callout {
+    max-width: 960px; margin: 0 auto; padding: 0 36px;
+  }
+  .callout-box {
+    background: color-mix(in srgb, var(--accent) 8%, transparent);
+    border-left: 3px solid var(--accent);
+    border-radius: 0 var(--radius) var(--radius) 0;
+    padding: 12px 16px;
+    margin-bottom: 16px;
+    font-size: 0.85rem;
+    color: var(--text-sec);
+  }
+  .callout-box strong { color: var(--accent-text); }
+</style>
+</head>
+<body data-theme="light">
+
+<button class="theme-switcher" onclick="toggleTheme()" title="切换亮/暗主题">🌓 切主题</button>
+
+<div class="page-head">
+  <h1>模块切换栏 — 视觉对比稿</h1>
+  <p>左栏现状 vs 右栏方案 &nbsp;|&nbsp; 点右上角按钮切换亮/暗主题看效果</p>
+</div>
+
+<!-- =============================================================
+     方案 A：现状 — hover 展开
+     ============================================================= -->
+<div class="section-label">A. 现状 — hover 才露出按钮（新用户看不到）</div>
+
+<div class="mock-site-head"><div class="mock-brand">顶尖资讯</div></div>
+
+<div class="cur-toggle">
+  <div class="cur-trigger">
+    <span class="cur-current">A I</span>
+    <span class="cur-arrow">▾</span>
+  </div>
+  <div class="cur-panel">
+    <button class="cur-btn">游 戏</button>
+    <button class="cur-btn active">A I</button>
+  </div>
+</div>
+
+<div class="mock-content">
+  <div class="mock-card"><div class="mock-card-title">AI 行业周报 — 2026Q2 回顾</div><div class="mock-card-meta">AI资讯 · 已分析 · 2026-06-20</div></div>
+  <div class="mock-card"><div class="mock-card-title">LLM 推理成本下降趋势分析</div><div class="mock-card-meta">AI资讯 · 初筛 · 2026-06-18</div></div>
+  <div class="mock-card"><div class="mock-card-title">游戏行业 AI NPC 应用调研</div><div class="mock-card-meta">访谈跟踪 · 已分析 · 2026-06-15</div></div>
+</div>
+
+<div class="callout">
+  <div class="callout-box">
+    <strong>⚠ 问题</strong>：新用户只看得到 26px 高的一条灰字 "A I ▾"，完全不知道这里能切换游戏/ AI 模块。hover 交互在手机上不可用。
+  </div>
+</div>
+
+<!-- =============================================================
+     方案 B：提案 — 始终可见 pill
+     ============================================================= -->
+<div class="section-label">B. 提案 — 两个按钮始终可见，选中态用 accent 色强调</div>
+
+<div class="mock-site-head"><div class="mock-brand">顶尖资讯</div></div>
+
+<div class="new-toggle">
+  <div class="pill-group">
+    <button class="pill-btn" id="newGameBtn">游 戏</button>
+    <button class="pill-btn active" id="newAIBtn">A I</button>
+  </div>
+</div>
+
+<div class="mock-content">
+  <div class="mock-card"><div class="mock-card-title">AI 行业周报 — 2026Q2 回顾</div><div class="mock-card-meta">AI资讯 · 已分析 · 2026-06-20</div></div>
+  <div class="mock-card"><div class="mock-card-title">LLM 推理成本下降趋势分析</div><div class="mock-card-meta">AI资讯 · 初筛 · 2026-06-18</div></div>
+  <div class="mock-card"><div class="mock-card-title">游戏行业 AI NPC 应用调研</div><div class="mock-card-meta">访谈跟踪 · 已分析 · 2026-06-15</div></div>
+</div>
+
+<div class="callout">
+  <div class="callout-box">
+    <strong>✅ 改进</strong>：两个按钮始终可见，一眼就知道有游戏 / AI 两个频道。选中按钮用品牌砖红色填充，与页面 editorial 风格一致。高度 44px 比原来 26px 略高但不抢眼。
+  </div>
+</div>
+
+<!-- =============================================================
+     同时展示：detail 页隐藏
+     ============================================================= -->
+<div class="section-label">C. Detail 页 — 切换栏 & 搜索栏隐藏（不改，已实现）</div>
+<div class="mock-site-head"><div class="mock-brand">顶尖资讯</div></div>
+<!-- 无 toggle bar / toolbar — 模拟 detail 态 -->
+<div class="mock-content">
+  <button style="display:inline-flex;align-items:center;gap:6px;background:none;border:none;font-family:var(--font-mono);font-size:0.7rem;color:var(--text-dim);cursor:pointer;padding:8px 0;margin-bottom:22px;">← 返回列表</button>
+  <div style="border-bottom:2px solid var(--text);padding-bottom:22px;margin-bottom:36px;">
+    <h1 style="font-family:var(--font-display);font-size:1.7rem;font-weight:900;line-height:1.22;margin-bottom:10px;">LLM 推理成本下降趋势分析</h1>
+    <span style="font-size:0.84rem;color:var(--text-sec);">2026-06-18 · AI资讯 · 已分析</span>
+  </div>
+  <p style="font-size:0.98rem;line-height:1.9;color:var(--text);">进入文章阅读后，顶部切换栏和搜索栏一起隐藏，不分散注意力。这个行为当前已实现，本次不改动。</p>
+</div>
+
+<script>
+  // 主题切换
+  function toggleTheme() {
+    const cur = document.documentElement.getAttribute('data-theme');
+    document.documentElement.setAttribute('data-theme', cur === 'light' ? 'dark' : 'light');
+  }
+  // 提案中的点击交互演示
+  document.getElementById('newGameBtn').addEventListener('click', function(){
+    this.classList.add('active');
+    document.getElementById('newAIBtn').classList.remove('active');
+  });
+  document.getElementById('newAIBtn').addEventListener('click', function(){
+    this.classList.add('active');
+    document.getElementById('newGameBtn').classList.remove('active');
+  });
+</script>
+
+</body>
+</html>

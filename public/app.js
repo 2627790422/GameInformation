@@ -109,20 +109,9 @@
     const btn = e.target.closest('.mt-btn');
     if (btn) {
       const key = btn.dataset.module;
-      if (key === S.activeModule) { E.mt.classList.remove('open'); return; }
+      if (key === S.activeModule) return;
       switchModule(key);
-      E.mt.classList.remove('open');
-      return;
     }
-    // Click trigger bar → toggle open (for touch devices)
-    if (e.target.closest('.mt-trigger')) {
-      E.mt.classList.toggle('open');
-    }
-  });
-
-  // Close toggle when clicking elsewhere
-  document.addEventListener('click', e => {
-    if (!E.mt.contains(e.target)) E.mt.classList.remove('open');
   });
 
   function switchModule(key) {
@@ -138,10 +127,6 @@
     E.mt.querySelectorAll('.mt-btn').forEach(b => {
       b.classList.toggle('active', b.dataset.module === key);
     });
-
-    // Update collapsed trigger label
-    const cur = E.mt.querySelector('.mt-current');
-    if (cur) cur.textContent = MODULES[key].label;
 
     // Rebuild sub-filter chips
     buildFilterChips();
