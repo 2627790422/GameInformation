@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>收藏 & 详情页 UI 改版 · 视觉稿</title>
+<style>
+/* ===== 复用项目设计 Token ===== */
+:root {
+  --font-display: "Noto Serif SC", serif;
+  --font-body: "Noto Sans SC", system-ui, sans-serif;
+  --font-mono: "DM Mono", monospace;
+  --radius: 5px;
+  --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+[data-theme="light"] {
+  --bg: #f6f3ed;
+  --bg-card: #fefcf8;
+  --bg-raised: #f0ece4;
+  --bg-hover: #fbf9f4;
+  --border: #e2dbcf;
+  --border-focus: #c7bda8;
+  --text: #1b1713;
+  --text-sec: #5a5349;
+  --text-dim: #9a9183;
+  --text-muted: #bfb8ab;
+  --accent: #b64e34;
+  --accent-soft: #f4e4dd;
+  --accent-text: #8e3922;
+  --pipe-wx: #2d8040;
+  --pipe-wx-bg: #e9f2ea;
+  --shadow-sm: 0 1px 2px rgba(0,0,0,0.03);
+  --shadow-md: 0 4px 24px rgba(0,0,0,0.06);
+}
+
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  font-family: var(--font-body);
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.7;
+  padding: 40px 20px;
+}
+
+.wrap { max-width: 1100px; margin: 0 auto; display: flex; flex-direction: column; gap: 48px; }
+
+h2 {
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  font-weight: 800;
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid var(--text);
+  display: flex; align-items: center; gap: 12px;
+}
+h2 .tag {
+  font-family: var(--font-mono);
+  font-size: 0.56rem;
+  padding: 2px 8px;
+  border-radius: 3px;
+  background: var(--accent);
+  color: #fff;
+  letter-spacing: 0.05em;
+  font-weight: 400;
+}
+h2 .tag.old { background: var(--text-muted); color: #fff; }
+
+h3 {
+  font-family: var(--font-mono);
+  font-size: 0.62rem;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-bottom: 12px;
+  margin-top: 24px;
+}
+h3:first-child { margin-top: 0; }
+
+/* ===== Scene: Card Grid ===== */
+.scene {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 28px;
+}
+.scene-label {
+  font-family: var(--font-mono);
+  font-size: 0.56rem;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-bottom: 16px;
+}
+
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+/* === OLD card style (当前) === */
+.card.old {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-left: none;
+  border-top: 4px solid var(--accent);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  padding: 22px;
+  position: relative;
+}
+.card.old .card-top {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 12px;
+}
+.card.old .card-badge {
+  font-family: var(--font-mono);
+  font-size: 0.56rem; padding: 2px 8px; border-radius: 3px;
+  background: var(--bg-raised); color: var(--text-dim);
+}
+.card.old .card-date {
+  font-family: var(--font-mono);
+  font-size: 0.62rem; color: var(--text-muted); margin-left: auto;
+}
+.card.old .card-title {
+  font-family: var(--font-display);
+  font-size: 1.08rem; font-weight: 700; line-height: 1.4;
+  margin-bottom: 6px;
+}
+.card.old .card-desc {
+  font-size: 0.85rem; color: var(--text-sec); line-height: 1.6;
+}
+/* old star */
+.card.old .bm-star-old {
+  position: absolute; top: 10px; right: 10px;
+  background: none; border: none; font-size: 1.2rem;
+  color: var(--text-muted); cursor: pointer;
+  padding: 4px 8px; line-height: 1;
+}
+
+/* === NEW card style (改版) === */
+.card.new {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 22px;
+  transition: all 0.3s var(--ease);
+}
+.card.new:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+
+.card.new .card-top {
+  display: flex; align-items: center; gap: 8px; margin-bottom: 12px;
+}
+.card.new .card-badge {
+  font-family: var(--font-mono);
+  font-size: 0.56rem; padding: 2px 8px; border-radius: 3px;
+  background: var(--bg-raised); color: var(--text-dim);
+}
+.card.new .card-date {
+  font-family: var(--font-mono);
+  font-size: 0.62rem; color: var(--text-muted); margin-left: auto;
+}
+
+/* new bookmark: part of card-top row, sits before date */
+.card.new .bm-star-new {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 26px; height: 26px;
+  background: none; border: 1.5px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-muted);
+  cursor: pointer;
+  margin-left: auto; margin-right: 2px;
+  transition: all 0.25s var(--ease);
+  flex-shrink: 0;
+}
+.card.new .bm-star-new svg { width: 13px; height: 13px; }
+.card.new .bm-star-new:hover {
+  border-color: #e8b830;
+  color: #e8b830;
+  background: #fef9e7;
+}
+.card.new .bm-star-new.active {
+  border-color: #e8b830;
+  color: #e8b830;
+  background: #e8b830;
+}
+.card.new .bm-star-new.active svg { color: #fff; }
+
+.card.new .card-title {
+  font-family: var(--font-display);
+  font-size: 1.08rem; font-weight: 700; line-height: 1.4;
+  margin-bottom: 6px;
+}
+.card.new .card-desc {
+  font-size: 0.85rem; color: var(--text-sec); line-height: 1.6;
+}
+
+/* === Compact card OLD === */
+.card.compact-old {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  padding: 10px 14px;
+  display: flex; align-items: center; gap: 12px;
+  position: relative;
+}
+.card.compact-old .card-badge {
+  font-family: var(--font-mono);
+  font-size: 0.58rem; padding: 3px 10px; border-radius: 3px;
+  background: var(--pipe-wx-bg); color: var(--pipe-wx);
+  flex-shrink: 0;
+}
+.card.compact-old .card-title {
+  font-family: var(--font-body);
+  font-size: 0.88rem; font-weight: 500; line-height: 1.4;
+  flex: 1;
+}
+.card.compact-old .bm-star-old {
+  background: none; border: none; font-size: 1.1rem;
+  color: var(--text-muted); cursor: pointer;
+  flex-shrink: 0;
+}
+
+/* === Compact card NEW === */
+.card.compact-new {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  display: flex; align-items: center; gap: 10px;
+  transition: all 0.25s var(--ease);
+}
+.card.compact-new:hover { transform: translateY(-1px); box-shadow: var(--shadow-sm); }
+.card.compact-new .card-badge {
+  font-family: var(--font-mono);
+  font-size: 0.58rem; padding: 3px 10px; border-radius: 3px;
+  background: var(--pipe-wx-bg); color: var(--pipe-wx);
+  flex-shrink: 0;
+}
+.card.compact-new .card-title {
+  font-family: var(--font-body);
+  font-size: 0.88rem; font-weight: 500; line-height: 1.4;
+  flex: 1;
+}
+.card.compact-new .bm-star-new {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 24px; height: 24px;
+  background: none; border: 1.5px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-muted);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.25s var(--ease);
+}
+.card.compact-new .bm-star-new svg { width: 12px; height: 12px; }
+.card.compact-new .bm-star-new:hover {
+  border-color: #e8b830; color: #e8b830; background: #fef9e7;
+}
+
+/* ============================================
+   Scene B: Detail View — Toolbar Hiding
+   ============================================ */
+
+/* Toolbar simulation */
+.toolbar-sim {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 10px 22px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 0;
+}
+.toolbar-sim .search { width: 200px; height: 34px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg); padding: 0 12px; font-size: 0.82rem; color: var(--text-dim); display: flex; align-items: center; }
+.toolbar-sim .right { display: flex; align-items: center; gap: 8px; }
+.toolbar-sim .avatar {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: var(--accent); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-display); font-size: 0.85rem; font-weight: 700;
+}
+.toolbar-sim .theme-btn {
+  width: 32px; height: 32px; border: 1px solid var(--border);
+  border-radius: var(--radius); background: var(--bg-card);
+  display: flex; align-items: center; justify-content: center;
+}
+
+/* OLD: toolbar shows in detail */
+.detail-old .toolbar-sim { opacity: 1; }
+
+/* NEW: toolbar hidden in detail, minimal bar only */
+.detail-minimal {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 22px;
+  margin-bottom: 24px;
+}
+.detail-minimal .back-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: var(--font-mono);
+  font-size: 0.7rem; letter-spacing: 0.06em;
+  color: var(--text-dim);
+  cursor: pointer; transition: color 0.25s;
+}
+.detail-minimal .back-btn:hover { color: var(--accent-text); }
+.detail-minimal .back-btn svg { width: 16px; height: 16px; }
+.detail-minimal .mini-actions { display: flex; align-items: center; gap: 10px; }
+.detail-minimal .theme-btn {
+  width: 30px; height: 30px; border: 1px solid var(--border);
+  border-radius: var(--radius); background: none;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  color: var(--text-dim);
+  transition: all 0.25s var(--ease);
+}
+.detail-minimal .theme-btn:hover { color: var(--accent-text); border-color: var(--accent); }
+.detail-minimal .auth-btn-mini {
+  display: flex; align-items: center; gap: 6px;
+  padding: 4px 10px; border: 1px solid var(--border);
+  border-radius: 20px; background: none;
+  font-family: var(--font-body); font-size: 0.76rem;
+  color: var(--text-dim); cursor: pointer;
+  transition: all 0.25s var(--ease);
+}
+.detail-minimal .auth-btn-mini:hover { color: var(--accent-text); border-color: var(--accent); }
+
+/* avatar in minimal bar */
+.detail-minimal .mini-avatar {
+  width: 26px; height: 26px; border-radius: 50%;
+  border: 1.5px solid var(--border);
+  background: var(--accent); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-display); font-size: 0.72rem; font-weight: 700;
+  cursor: pointer;
+  transition: all 0.25s var(--ease);
+}
+.detail-minimal .mini-avatar:hover { border-color: var(--accent-text); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+
+/* Article body sim */
+.article-body {
+  max-width: 700px; margin: 0 auto;
+  font-family: var(--font-display);
+}
+.article-body h1 {
+  font-size: 1.6rem; font-weight: 900; line-height: 1.2;
+  margin-bottom: 16px;
+}
+.article-body .meta {
+  font-family: var(--font-mono); font-size: 0.64rem; color: var(--text-dim);
+  margin-bottom: 28px; padding-bottom: 12px;
+  border-bottom: 2px solid var(--text);
+}
+.article-body p {
+  font-family: var(--font-body);
+  font-size: 0.95rem; line-height: 1.9; color: var(--text-sec);
+  margin-bottom: 16px;
+}
+
+/* ===== Layout: side by side ===== */
+.side { display: flex; gap: 28px; }
+.side > div { flex: 1; }
+
+/* Overlay labels on scene */
+.scene { position: relative; }
+.scene .watermark {
+  position: absolute;
+  top: 8px; right: 14px;
+  font-family: var(--font-mono);
+  font-size: 0.56rem;
+  letter-spacing: 0.06em;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+/* Footer note */
+.note {
+  margin-top: 16px;
+  padding: 10px 16px;
+  background: var(--accent-soft);
+  border-left: 3px solid var(--accent);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  font-size: 0.82rem; color: var(--accent-text);
+  line-height: 1.5;
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<!-- ==================== SCENE 1: CARD ==================== -->
+<h2>
+  场景一：文章卡片
+  <span class="tag old">当前</span>
+  <span style="color:var(--text-dim);font-size:0.7rem;">→</span>
+  <span class="tag">改版</span>
+</h2>
+
+<h3>标准卡片 · 改前 vs 改后</h3>
+<div class="side">
+  <!-- OLD standard card -->
+  <div class="scene">
+    <div class="watermark">CURRENT</div>
+    <div class="scene-label">标准卡片（当前）</div>
+    <div class="card old">
+      <div class="card-top">
+        <span class="card-badge">AI资讯</span>
+        <span class="card-badge">已分析</span>
+        <span class="card-date">2025-12-28</span>
+      </div>
+      <button class="bm-star-old" title="收藏">☆</button>
+      <div class="card-title">OpenAI 发布 o3 推理模型，性能提升显著</div>
+      <div class="card-desc">OpenAI 在年终发布会上正式推出 o3 系列推理模型，在多项基准测试中刷新记录，标志着推理能力的又一次飞跃。</div>
+    </div>
+    <div class="note">
+      ⚠️ 问题：<strong>星标和日期挤在右上角重叠</strong>，absolute 定位脱离排版流
+    </div>
+  </div>
+
+  <!-- NEW standard card -->
+  <div class="scene">
+    <div class="watermark">NEW</div>
+    <div class="scene-label">标准卡片（改版）</div>
+    <div class="card new">
+      <div class="card-top">
+        <span class="card-badge">AI资讯</span>
+        <span class="card-badge">已分析</span>
+        <button class="bm-star-new" title="收藏">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+          </svg>
+        </button>
+        <span class="card-date">2025-12-28</span>
+      </div>
+      <div class="card-title">OpenAI 发布 o3 推理模型，性能提升显著</div>
+      <div class="card-desc">OpenAI 在年终发布会上正式推出 o3 系列推理模型，在多项基准测试中刷新记录，标志着推理能力的又一次飞跃。</div>
+    </div>
+    <div class="note" style="background:#e9f2ea;border-left-color:var(--pipe-wx);color:var(--pipe-wx);">
+      ✅ 改进：星标融入 card-top 行，<strong>在日期前面</strong>，SVG 图标 + 描边，hover 时边框变金色
+    </div>
+  </div>
+</div>
+
+<h3>收藏激活态对比</h3>
+<div class="side">
+  <div class="scene">
+    <div class="watermark">CURRENT</div>
+    <div class="scene-label">已收藏（当前）</div>
+    <div class="card old">
+      <div class="card-top">
+        <span class="card-badge">AI资讯</span>
+        <span class="card-badge">已分析</span>
+        <span class="card-date">2025-12-28</span>
+      </div>
+      <button class="bm-star-old active" style="color:#e8b830;" title="取消收藏">★</button>
+      <div class="card-title">OpenAI 发布 o3 推理模型</div>
+      <div class="card-desc">在多项基准测试中刷新记录。</div>
+    </div>
+  </div>
+
+  <div class="scene">
+    <div class="watermark">NEW</div>
+    <div class="scene-label">已收藏（改版）</div>
+    <div class="card new">
+      <div class="card-top">
+        <span class="card-badge">AI资讯</span>
+        <span class="card-badge">已分析</span>
+        <button class="bm-star-new active" title="取消收藏">
+          <svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#fff">
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+          </svg>
+        </button>
+        <span class="card-date">2025-12-28</span>
+      </div>
+      <div class="card-title">OpenAI 发布 o3 推理模型</div>
+      <div class="card-desc">在多项基准测试中刷新记录。</div>
+    </div>
+    <div class="note" style="background:#e9f2ea;border-left-color:var(--pipe-wx);color:var(--pipe-wx);">
+      ✅ 已收藏：<strong>金色实心填充</strong>，一目了然，不靠 ★/☆ 字符
+    </div>
+  </div>
+</div>
+
+<h3>紧凑卡片 · 改前 vs 改后</h3>
+<div class="side">
+  <div class="scene">
+    <div class="watermark">CURRENT</div>
+    <div class="scene-label">紧凑卡片（当前）</div>
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      <div class="card compact-old">
+        <span class="card-badge">微信资讯</span>
+        <div class="card-title">腾讯游戏发布会公布多款新作</div>
+        <button class="bm-star-old">☆</button>
+      </div>
+      <div class="card compact-old">
+        <span class="card-badge">设计管线</span>
+        <div class="card-title">关卡设计中的引导线方法论</div>
+        <button class="bm-star-old">☆</button>
+      </div>
+    </div>
+    <div class="note">
+      ⚠️ 问题：☆ 在行末，<strong>和标题挤在一起</strong>，hover 区域小，容易误点进文章
+    </div>
+  </div>
+
+  <div class="scene">
+    <div class="watermark">NEW</div>
+    <div class="scene-label">紧凑卡片（改版）</div>
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      <div class="card compact-new">
+        <span class="card-badge">微信资讯</span>
+        <div class="card-title">腾讯游戏发布会公布多款新作</div>
+        <button class="bm-star-new" title="收藏">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+          </svg>
+        </button>
+      </div>
+      <div class="card compact-new">
+        <span class="card-badge">设计管线</span>
+        <div class="card-title">关卡设计中的引导线方法论</div>
+        <button class="bm-star-new" title="收藏">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+    <div class="note" style="background:#e9f2ea;border-left-color:var(--pipe-wx);color:var(--pipe-wx);">
+      ✅ 改进：星标 <strong>跟标题之间有 10px 间距</strong>，独立点击区域，防误触
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SCENE 2: DETAIL VIEW ==================== -->
+<h2>
+  场景二：文章详情页
+  <span class="tag old">当前</span>
+  <span style="color:var(--text-dim);font-size:0.7rem;">→</span>
+  <span class="tag">改版</span>
+</h2>
+
+<div class="side">
+  <!-- OLD: toolbar visible -->
+  <div class="scene">
+    <div class="watermark">CURRENT</div>
+    <div class="scene-label">详情页顶部（当前）</div>
+    <div class="toolbar-sim" style="margin-bottom:20px;">
+      <div class="search">搜索文章…</div>
+      <div class="right">
+        <div class="avatar" title="杨">杨</div>
+        <div class="theme-btn">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2"/></svg>
+        </div>
+      </div>
+    </div>
+    <button style="display:inline-flex;align-items:center;gap:6px;background:none;border:none;font-family:var(--font-mono);font-size:0.7rem;color:var(--text-dim);cursor:pointer;margin-bottom:20px;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+      返回列表
+    </button>
+    <div class="article-body">
+      <h1>文章标题在这里</h1>
+      <div class="meta">AI资讯 · 已分析 · 2025-12-28</div>
+      <p>文章内容区域。用户正在沉浸式阅读，但顶部仍然挂着搜索框和登录头像，显得界面臃肿，分散注意力。</p>
+    </div>
+    <div class="note">
+      ⚠️ 问题：搜索框 + 登录头像 <strong>全程可见</strong>，跟沉浸阅读场景冲突
+    </div>
+  </div>
+
+  <!-- NEW: toolbar hidden, minimal bar -->
+  <div class="scene">
+    <div class="watermark">NEW</div>
+    <div class="scene-label">详情页顶部（改版）</div>
+    <div class="detail-minimal">
+      <div class="back-btn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+        返回列表
+      </div>
+      <div class="mini-actions">
+        <button class="theme-btn" title="切换主题">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2"/></svg>
+        </button>
+        <button class="auth-btn-mini">
+          <span class="mini-avatar">杨</span>
+          <span>杨杰辉</span>
+        </button>
+      </div>
+    </div>
+    <!-- search + main toolbar GONE -->
+    <div class="article-body">
+      <h1>文章标题在这里</h1>
+      <div class="meta">AI资讯 · 已分析 · 2025-12-28</div>
+      <p>文章内容区域。进入阅读视图中，搜索栏和主工具栏完全隐藏，只留一条极简顶栏：左侧返回按钮，右侧主题切换 + 登录状态（名字+小头像）。阅读体验干净专注。</p>
+    </div>
+    <div class="note" style="background:#e9f2ea;border-left-color:var(--pipe-wx);color:var(--pipe-wx);">
+      ✅ 改进：详情页 <strong>只保留极简导航条</strong>，搜索框收起，空间还给文章
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SCENE 3: AVATAR COMPARISON ==================== -->
+<h2>
+  场景三：登录态显示
+  <span class="tag old">当前</span>
+  <span style="color:var(--text-dim);font-size:0.7rem;">→</span>
+  <span class="tag">改版</span>
+</h2>
+
+<div class="side">
+  <div class="scene">
+    <div class="watermark">CURRENT</div>
+    <div class="scene-label">工具栏登录态（当前）</div>
+    <div style="display:flex;align-items:center;gap:12px;">
+      <div class="avatar" title="杨" style="width:38px;height:38px;">杨</div>
+      <span style="font-size:0.78rem;color:var(--text-dim);">← 单字圆圈，38px</span>
+    </div>
+    <div class="note">
+      ⚠️ 问题：圆圈 + 单字，没有名字显示，信息太少，hover 才出菜单
+    </div>
+  </div>
+
+  <div class="scene">
+    <div class="watermark">NEW</div>
+    <div class="scene-label">工具栏登录态（改版）</div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <!-- Dropdown trigger as pill -->
+      <div style="display:flex;align-items:center;gap:8px;padding:4px 4px 4px 12px;border:1px solid var(--border);border-radius:24px;cursor:pointer;transition:all 0.25s var(--ease);font-size:0.8rem;color:var(--text-sec);">
+        <span style="font-size:0.78rem;">杨杰辉</span>
+        <div class="mini-avatar" style="width:28px;height:28px;">杨</div>
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+    </div>
+    <div class="note" style="background:#e9f2ea;border-left-color:var(--pipe-wx);color:var(--pipe-wx);">
+      ✅ 改进：<strong>药丸形按钮</strong>，名字 + 小头像 + 下拉箭头，信息完整，点击展开菜单
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SCENE 4: FULL PAGE LAYOUT ==================== -->
+<h2>场景四：整体布局对比</h2>
+<div class="side">
+  <div class="scene" style="padding:16px;">
+    <div class="watermark">CURRENT</div>
+    <div class="scene-label">当前详情页布局</div>
+    <svg width="100%" height="280" viewBox="0 0 400 280" style="border:1px solid var(--border);border-radius:var(--radius);">
+      <!-- Top bar -->
+      <rect x="0" y="0" width="400" height="26" fill="var(--bg-raised)" rx="0"/>
+      <text x="200" y="17" text-anchor="middle" font-size="9" fill="var(--text-dim)" font-family="sans-serif">模块切换 A I ▾</text>
+      <!-- Masthead -->
+      <rect x="0" y="26" width="400" height="34" fill="var(--bg-card)" stroke="var(--border)" stroke-width="0.5"/>
+      <text x="200" y="47" text-anchor="middle" font-size="8" fill="var(--text-dim)" font-family="sans-serif">顶尖资讯</text>
+      <!-- Toolbar -->
+      <rect x="0" y="60" width="400" height="30" fill="var(--bg-card)" stroke="var(--border)" stroke-width="0.5"/>
+      <rect x="10" y="67" width="120" height="16" rx="3" fill="var(--bg-raised)"/>
+      <text x="15" y="79" font-size="7" fill="var(--text-muted)" font-family="sans-serif">搜索文章…</text>
+      <circle cx="370" cy="75" r="10" fill="var(--accent)"/>
+      <text x="370" y="78" text-anchor="middle" font-size="7" fill="#fff" font-family="sans-serif">杨</text>
+      <!-- Article area -->
+      <rect x="20" y="100" width="360" height="160" fill="var(--bg-card)" stroke="var(--border)" stroke-width="0.5" rx="3"/>
+      <text x="200" y="140" text-anchor="middle" font-size="11" fill="var(--text)" font-family="serif" font-weight="bold">文章标题</text>
+      <text x="200" y="160" text-anchor="middle" font-size="7" fill="var(--text-dim)" font-family="sans-serif">文章正文内容区域...</text>
+      <!-- Red highlight: toolbar visible -->
+      <rect x="0" y="60" width="400" height="30" fill="none" stroke="#e04040" stroke-width="2" stroke-dasharray="4,2"/>
+      <text x="360" y="58" font-size="6" fill="#e04040" font-family="sans-serif">⚠ 占用阅读空间</text>
+    </svg>
+  </div>
+
+  <div class="scene" style="padding:16px;">
+    <div class="watermark">NEW</div>
+    <div class="scene-label">改版后详情页布局</div>
+    <svg width="100%" height="280" viewBox="0 0 400 280" style="border:1px solid var(--border);border-radius:var(--radius);">
+      <!-- Top bar (collapsed, just module indicator) -->
+      <rect x="0" y="0" width="400" height="20" fill="var(--bg-raised)" rx="0"/>
+      <text x="200" y="13" text-anchor="middle" font-size="8" fill="var(--text-muted)" font-family="sans-serif">A I</text>
+      <!-- Masthead: simplified -->
+      <rect x="0" y="20" width="400" height="24" fill="var(--bg-card)" stroke="var(--border)" stroke-width="0.5"/>
+      <!-- No toolbar row! -->
+      <!-- Minimal nav bar -->
+      <rect x="0" y="44" width="400" height="24" fill="var(--bg)"/>
+      <text x="30" y="59" font-size="8" fill="var(--text-dim)" font-family="sans-serif">← 返回列表</text>
+      <circle cx="370" cy="56" r="8" fill="var(--accent)"/>
+      <text x="370" y="59" text-anchor="middle" font-size="6" fill="#fff" font-family="sans-serif">杨</text>
+      <!-- Article area: more space -->
+      <rect x="20" y="76" width="360" height="184" fill="var(--bg-card)" stroke="var(--border)" stroke-width="0.5" rx="3"/>
+      <text x="200" y="120" text-anchor="middle" font-size="11" fill="var(--text)" font-family="serif" font-weight="bold">文章标题</text>
+      <text x="200" y="140" text-anchor="middle" font-size="7" fill="var(--text-dim)" font-family="sans-serif">文章正文内容区域...</text>
+      <text x="200" y="155" text-anchor="middle" font-size="7" fill="var(--text-dim)" font-family="sans-serif">阅读空间更大，更沉浸</text>
+      <!-- Green highlight -->
+      <rect x="20" y="76" width="360" height="184" fill="none" stroke="#2d8040" stroke-width="2" stroke-dasharray="4,2"/>
+      <text x="340" y="74" font-size="6" fill="#2d8040" font-family="sans-serif">✅ 更多阅读空间</text>
+    </svg>
+  </div>
+</div>
+
+<!-- ==================== SUMMARY ==================== -->
+<h2>改版汇总</h2>
+<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:20px;">
+
+  <div class="scene" style="text-align:center;">
+    <div style="font-family:var(--font-display);font-size:1.1rem;font-weight:700;margin-bottom:8px;">收藏星标</div>
+    <div style="font-size:0.85rem;color:var(--text-sec);line-height:1.7;">
+      从绝对定位 → <strong>融入排版流</strong><br>
+      从 ☆/★ 字符 → <strong>SVG 图标</strong><br>
+      从无边框 → <strong>描边 + hover 金底</strong><br>
+      激活态：金色实心填充
+    </div>
+  </div>
+
+  <div class="scene" style="text-align:center;">
+    <div style="font-family:var(--font-display);font-size:1.1rem;font-weight:700;margin-bottom:8px;">详情页 Toolbar</div>
+    <div style="font-size:0.85rem;color:var(--text-sec);line-height:1.7;">
+      搜索框 → <strong>完全隐藏</strong><br>
+      登录按钮 → <strong>缩为极简导航条</strong><br>
+      只保留：返回 + 主题 + 用户<br>
+      文章区域获得更多垂直空间
+    </div>
+  </div>
+
+  <div class="scene" style="text-align:center;">
+    <div style="font-family:var(--font-display);font-size:1.1rem;font-weight:700;margin-bottom:8px;">登录态显示</div>
+    <div style="font-size:0.85rem;color:var(--text-sec);line-height:1.7;">
+      从单字圆圈 → <strong>药丸按钮</strong><br>
+      名字 + 小头像 + 下拉箭头<br>
+      信息一目了然<br>
+      点击展开用户菜单
+    </div>
+  </div>
+
+</div>
+
+</div>
+</body>
+</html>

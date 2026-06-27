@@ -29,6 +29,10 @@
     }
   };
 
+  /* ---- Bookmark Star SVG templates ---- */
+  const starSvg = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
+  const starFilled = `<svg viewBox="0 0 24 24" fill="#e8b830" stroke="#e8b830" stroke-width="1.8"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
+
   const PAGE_SIZE = 15;
 
   /* ---- State ---- */
@@ -51,10 +55,19 @@
   const $ = s => document.querySelector(s);
   const E = {
     tl: $('#timeline'), tlV: $('#timelineView'), dtV: $('#detailView'),
-    stV: $('#statsView'), art: $('#articleDetail'), cnt: $('#articleCount'),
+    stV: $('#statsView'), pfV: $('#profileView'), bmV: $('#bookmarksView'),
+    art: $('#articleDetail'), cnt: $('#articleCount'),
     emp: $('#emptyState'), si: $('#searchInput'), sd: $('#searchDropdown'),
-    sp: $('#statsPanel'), tk: $('#toast'), tt: $('#themeToggle'),
+    sp: $('#statsPanel'), pfP: $('#profilePanel'), bmG: $('#bookmarkGrid'),
+    bmCnt: $('#bookmarkCount'), bmEmp: $('#bookmarkEmpty'),
+    tk: $('#toast'), tt: $('#themeToggle'),
     fc: $('#filterChips'), mt: $('#moduleToggle'),
+    um: $('#userMenu'), uDrop: $('#userDrop'), authBtn: $('#authBtn'),
+    uName: $('#userNameDisplay'),
+    aModal: $('#authModal'), aForm: $('#authForm'), aErr: $('#authError'),
+    aSubmit: $('#authSubmit'), aEmail: $('#authEmail'), aPwd: $('#authPassword'),
+    aName: $('#authName'), aNameField: $('#authNameField'),
+    aSwitch: $('#authSwitch'), aClose: $('#authModalClose'),
   };
 
   /* ---- Mermaid ---- */
@@ -218,6 +231,8 @@
     const h = location.hash;
     if (h.startsWith('#d/')) return showDetail(h.slice(3));
     if (h === '#s') return showStats();
+    if (h === '#profile') return showProfile();
+    if (h === '#bookmarks') return showBookmarks();
     showTimeline();
   }
   window.addEventListener('hashchange', route);
@@ -228,8 +243,19 @@
     E.tlV.classList.toggle('active', n === 'timeline');
     E.dtV.classList.toggle('active', n === 'detail');
     E.stV.classList.toggle('active', n === 'stats');
+    E.pfV.classList.toggle('active', n === 'profile');
+    E.bmV.classList.toggle('active', n === 'bookmarks');
     document.querySelector('.filter-strip').style.display = (n === 'detail') ? 'none' : '';
-    if (n === 'detail') scrollTo(0, 0);
+    const toolbar = document.getElementById('toolbar');
+    const mt = document.getElementById('moduleToggle');
+    if (n === 'detail') {
+      if (toolbar) toolbar.style.display = 'none';
+      if (mt) mt.style.display = 'none';
+    } else {
+      if (toolbar) toolbar.style.display = '';
+      if (mt) mt.style.display = '';
+    }
+    if (n === 'detail' || n === 'profile' || n === 'bookmarks') scrollTo(0, 0);
   }
 
   function showTimeline() {
@@ -337,6 +363,9 @@
     el.setAttribute('data-pipeline', a.pipeline);
     const pc = pipeClass(a.pipeline);
 
+    // Always render bookmark star; hidden initially until auth state is known
+    const bmStar = `<button class="bm-star${Auth.isBookmarked(a.id) ? ' active' : ''}" data-id="${esc(a.id)}" title="${Auth.isBookmarked(a.id) ? '取消收藏' : '收藏'}" style="display:none">${Auth.isBookmarked(a.id) ? starFilled : starSvg}</button>`;
+
     if (variant === 'standard') {
       const tags = (a.tags || []).slice(0, 4);
       const desc = (a.summary || '').slice(0, 120);
@@ -346,6 +375,7 @@
           `<span class="card-badge">${esc(a.stage)}</span>` +
           `<span class="card-date">${esc(a.date || '')}</span>` +
         `</div>` +
+        bmStar +
         `<div class="card-title">${esc(a.title)}</div>` +
         (a.source ? `<div class="card-source">来源：${esc(a.source)}</div>` : '') +
         (desc ? `<div class="card-desc">${esc(desc)}</div>` : '') +
@@ -353,9 +383,22 @@
     } else {
       el.innerHTML =
         `<span class="card-badge ${pc}">${esc(a.pipeline)}</span>` +
+        bmStar +
         `<div class="card-title">${esc(a.title)}</div>`;
     }
-    el.addEventListener('click', () => { location.hash = 'd/' + a.id; });
+    el.addEventListener('click', e => {
+      // Don't navigate if clicking bookmark star
+      if (e.target.closest('.bm-star')) return;
+      location.hash = 'd/' + a.id;
+    });
+    // Bookmark star click
+    const star = el.querySelector('.bm-star');
+    if (star) {
+      star.addEventListener('click', e => {
+        e.stopPropagation();
+        toggleBookmark(a.id, star);
+      });
+    }
     return el;
   }
 
@@ -458,19 +501,6 @@
   $('#backBtn').addEventListener('click', showTimeline);
   $('#statsBackBtn').addEventListener('click', showTimeline);
 
-  /* ---- Keyboard ---- */
-  document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') {
-      const lb = document.querySelector('.mermaid-lb');
-      if (lb) { lb.remove(); return; }
-      if (S.view !== 'timeline') showTimeline();
-    }
-    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-      e.preventDefault();
-      E.si.focus();
-    }
-  });
-
   /* ---- Detail ---- */
   async function loadDetail(id) {
     E.art.innerHTML = '';
@@ -497,6 +527,7 @@
             `<span class="card-date">${esc(a.date || '')}</span>` +
           `</div>` +
           `<h1 class="detail-title">${esc(a.title)}</h1>` +
+          `<button class="bm-star detail-star${Auth.isBookmarked(a.id) ? ' active' : ''}" data-id="${esc(a.id)}" title="${Auth.isBookmarked(a.id) ? '取消收藏' : '收藏'}" style="display:none">${Auth.isBookmarked(a.id) ? starFilled : starSvg}</button>` +
           `<div class="detail-meta-row">` +
             (a.source ? `<span>来源：${esc(a.source)}</span>` : '') +
             (a.url ? `<a href="${esc(a.url)}" target="_blank" rel="noopener">查看原文 &rarr;</a>` : '') +
@@ -507,6 +538,13 @@
       `</div>`;
 
     requestAnimationFrame(() => {
+      var detailStar = E.art.querySelector(".detail-star");
+      if (detailStar) {
+        detailStar.addEventListener("click", function(e) {
+          e.stopPropagation();
+          toggleBookmark(detailStar.dataset.id, detailStar);
+        });
+      }
       const bs = E.art.querySelectorAll('pre.mermaid');
       if (bs.length) {
         try {
@@ -672,6 +710,289 @@
     return d.innerHTML;
   }
 
+  /* ---- Bookmark Toggle ---- */
+  async function toggleBookmark(articleId, starEl) {
+    if (!Auth.getUser()) {
+      toast('请先登录');
+      return;
+    }
+    try {
+      if (Auth.isBookmarked(articleId)) {
+        await Auth.removeBookmark(articleId);
+        starEl.classList.remove('active');
+        const svg = starEl.querySelector('svg');
+        if (svg) { svg.setAttribute('fill', 'none'); svg.setAttribute('stroke', 'currentColor'); }
+        starEl.title = '收藏';
+        toast('已取消收藏');
+      } else {
+        await Auth.addBookmark(articleId);
+        starEl.classList.add('active');
+        const svg = starEl.querySelector('svg');
+        if (svg) { svg.setAttribute('fill', '#e8b830'); svg.setAttribute('stroke', '#e8b830'); }
+        starEl.title = '取消收藏';
+        toast('已收藏');
+      }
+    } catch (e) {
+      console.error(e);
+      toast('操作失败');
+    }
+  }
+
+  /* ---- Profile View ---- */
+  function showProfile() {
+    if (!Auth.getUser()) { location.hash = ''; return; }
+    setView('profile');
+    history.replaceState(null, '', '#profile');
+
+    const p = Auth.getProfile();
+    const displayName = p?.display_name || (Auth.getUser()?.user_metadata?.display_name) || '';
+
+    E.pfP.innerHTML =
+      `<div class="profile-wrap">` +
+        `<h2>个人信息</h2>` +
+        `<div class="profile-field">` +
+          `<label for="profileName">昵称</label>` +
+          `<input type="text" id="profileName" value="${esc(displayName)}" placeholder="输入昵称">` +
+          `<div class="hint">昵称将公开展示在收藏和评论中</div>` +
+        `</div>` +
+        `<div class="profile-field">` +
+          `<label>邮箱</label>` +
+          `<div style="padding:10px 0;font-size:0.92rem;color:var(--text-dim)">${esc(Auth.getUser()?.email || '')}</div>` +
+        `</div>` +
+        `<button class="profile-save-btn" id="profileSaveBtn">保存</button>` +
+      `</div>`;
+
+    document.getElementById('profileSaveBtn').addEventListener('click', async () => {
+      const newName = document.getElementById('profileName').value.trim();
+      try {
+        await Auth.updateProfile({ display_name: newName });
+        toast('已保存');
+        // Refresh avatar display
+        refreshUserDisplay();
+      } catch (e) {
+        console.error(e);
+        toast('保存失败: ' + (e.message || '未知错误'));
+      }
+    });
+  }
+
+  /* ---- Bookmarks View ---- */
+  async function showBookmarks() {
+    if (!Auth.getUser()) { location.hash = ''; return; }
+    setView('bookmarks');
+    history.replaceState(null, '', '#bookmarks');
+
+    E.bmG.innerHTML = '';
+    E.bmEmp.style.display = 'none';
+
+    try {
+      const bmList = await Auth.getBookmarks();
+      E.bmCnt.textContent = `共 ${bmList.length} 篇收藏`;
+
+      if (!bmList.length) {
+        E.bmEmp.style.display = 'block';
+        return;
+      }
+
+      for (const bm of bmList) {
+        try {
+          const r = await fetch(`/api/articles/${bm.article_id}`);
+          if (!r.ok) continue;
+          const article = await r.json();
+          if (article) {
+            E.bmG.appendChild(card(article, 'compact'));
+          }
+        } catch (_) {
+          // Skip individual fetch errors
+        }
+      }
+
+      if (!E.bmG.children.length) {
+        E.bmEmp.style.display = 'block';
+      }
+    } catch (e) {
+      console.error(e);
+      toast('加载收藏失败');
+      E.bmEmp.style.display = 'block';
+    }
+  }
+
+  /* ---- Auth Modal Logic ---- */
+  let _authTab = 'login';
+
+  // Open modal or toggle user drop
+  E.authBtn.addEventListener('click', () => {
+    if (Auth.getUser()) {
+      E.uDrop.style.display = E.uDrop.style.display === 'none' ? 'block' : 'none';
+    } else {
+      E.aModal.style.display = 'flex';
+      _authTab = 'login';
+      updateAuthForm();
+    }
+  });
+
+  // Close modal
+  E.aClose.addEventListener('click', () => { E.aModal.style.display = 'none'; });
+  E.aModal.addEventListener('click', e => {
+    if (e.target === E.aModal) E.aModal.style.display = 'none';
+  });
+
+  // Tab switching
+  E.aModal.querySelectorAll('.auth-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      _authTab = tab.dataset.tab;
+      E.aModal.querySelectorAll('.auth-tab').forEach(t => t.classList.toggle('active', t === tab));
+      updateAuthForm();
+    });
+  });
+
+  // Bottom switch link
+  E.aSwitch.addEventListener('click', e => {
+    const btn = e.target.closest('[data-tab]');
+    if (!btn) return;
+    _authTab = btn.dataset.tab;
+    E.aModal.querySelectorAll('.auth-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === _authTab));
+    updateAuthForm();
+  });
+
+  function updateAuthForm() {
+    const isLogin = _authTab === 'login';
+    E.aNameField.style.display = isLogin ? 'none' : '';
+    E.aSubmit.textContent = isLogin ? '登录' : '注册';
+    E.aSwitch.innerHTML = isLogin
+      ? '还没有账号？<button type="button" class="link-btn" data-tab="register">立即注册</button>'
+      : '已有账号？<button type="button" class="link-btn" data-tab="login">立即登录</button>';
+    E.aErr.textContent = '';
+  }
+
+  // Form submission
+  E.aForm.addEventListener('submit', async e => {
+    e.preventDefault();
+    E.aErr.textContent = '';
+    E.aSubmit.disabled = true;
+    E.aSubmit.textContent = '处理中...';
+
+    const email = E.aEmail.value.trim();
+    const password = E.aPwd.value;
+
+    try {
+      if (_authTab === 'login') {
+        await Auth.signIn(email, password);
+        E.aModal.style.display = 'none';
+        E.uDrop.style.display = 'none';
+        toast('登录成功');
+        refreshBookmarkStars();
+      } else {
+        const name = E.aName.value.trim() || email.split('@')[0];
+        const result = await Auth.signUp(email, password, name);
+        if (result.needsEmailConfirmation) {
+          // Email confirmation required — don't close modal, show instructions
+          E.aErr.textContent = '';
+          toast('注册成功！请查收确认邮件后登录');
+          // Switch to login tab so user can login after confirming
+          _authTab = 'login';
+          E.aModal.querySelectorAll('.auth-tab').forEach(t => t.classList.toggle('active', t.dataset.tab === 'login'));
+          updateAuthForm();
+          E.aEmail.value = email; // Pre-fill email for convenience
+        } else {
+          E.aModal.style.display = 'none';
+          toast('注册成功');
+          refreshBookmarkStars();
+        }
+      }
+    } catch (err) {
+      E.aErr.textContent = err.message || '操作失败，请重试';
+    } finally {
+      E.aSubmit.disabled = false;
+      E.aSubmit.textContent = _authTab === 'login' ? '登录' : '注册';
+    }
+  });
+
+  /* ---- User Menu Logic ---- */
+  function refreshUserDisplay() {
+    const user = Auth.getUser();
+    if (user) {
+      const profile = Auth.getProfile();
+      const displayName = profile?.display_name || user.user_metadata?.display_name || user.email?.split('@')[0] || '用户';
+      const initial = displayName.charAt(0).toUpperCase();
+
+      E.authBtn.innerHTML =
+        `<span>${esc(displayName)}</span>` +
+        `<span class="pill-avatar">${esc(initial)}</span>` +
+        `<span class="pill-arrow"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></span>`;
+      E.authBtn.className = 'user-pill';
+      E.authBtn.title = displayName;
+      E.uName.textContent = displayName;
+      E.uDrop.style.display = 'none';
+    } else {
+      E.authBtn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
+      E.authBtn.className = 'tool-btn';
+      E.authBtn.title = '登录';
+      E.uDrop.style.display = 'none';
+    }
+  }
+
+  // User dropdown actions
+  E.uDrop.addEventListener('click', e => {
+    const item = e.target.closest('.user-drop-item');
+    if (!item) return;
+    const action = item.dataset.action;
+    E.uDrop.style.display = 'none';
+    if (action === 'profile') location.hash = '#profile';
+    else if (action === 'bookmarks') location.hash = '#bookmarks';
+    else if (action === 'signout') { Auth.signOut(); location.hash = ''; }
+  });
+
+  // Close user drop on outside click
+  document.addEventListener('click', e => {
+    if (!E.um.contains(e.target)) E.uDrop.style.display = 'none';
+  });
+
+  // Listen for auth changes
+  Auth.onAuthChange(user => {
+    refreshUserDisplay();
+    // Always refresh stars: hides them when logged out, shows+updates when logged in
+    refreshBookmarkStars();
+  });
+
+  /* ---- Back Buttons ---- */
+  document.getElementById('profileBackBtn').addEventListener('click', () => { location.hash = ''; });
+  document.getElementById('bookmarksBackBtn').addEventListener('click', () => { location.hash = ''; });
+
+  /* ---- Keyboard Extension: Escape for profile/bookmarks ---- */
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+      const lb = document.querySelector('.mermaid-lb');
+      if (lb) { lb.remove(); return; }
+      if (S.view === 'profile' || S.view === 'bookmarks') { location.hash = ''; return; }
+      if (S.view !== 'timeline') showTimeline();
+    }
+    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+      e.preventDefault();
+      E.si.focus();
+    }
+  });
+
+  /* ---- Refresh Bookmark Stars After Login ---- */
+  function refreshBookmarkStars() {
+    const user = Auth.getUser();
+    document.querySelectorAll('.bm-star').forEach(star => {
+      if (!user) { star.style.display = 'none'; return; }
+      star.style.display = '';
+      const id = star.dataset.id;
+      if (!id) return;
+      const bookmarked = Auth.isBookmarked(id);
+      star.classList.toggle('active', bookmarked);
+      const svg = star.querySelector('svg');
+      if (svg) {
+        svg.setAttribute('fill', bookmarked ? '#e8b830' : 'none');
+        svg.setAttribute('stroke', bookmarked ? '#e8b830' : 'currentColor');
+      }
+      star.title = bookmarked ? '取消收藏' : '收藏';
+    });
+  }
+
   /* ---- Init ---- */
   (async function init() {
     try { const r = await fetch('/api/stats'); if (r.ok) S.statsCache = await r.json(); } catch (_) {}
@@ -682,6 +1003,9 @@
     else if (h === '#s') showStats();
     else showTimeline();
     updateMastheadMeta();
+
+    // Init auth
+    Auth.init();
   })();
 
 })();
