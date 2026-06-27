@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NEW Badge — 视觉稿 v3 · 方案对比</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,400;0,500;1,400&family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@400;600;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --font-display: "Noto Serif SC", serif;
+    --font-body:    "Noto Sans SC", sans-serif;
+    --font-mono:    "DM Mono", monospace;
+    --radius: 5px;
+    --sx: 4px; --sm: 10px; --sd: 22px; --sl: 36px;
+    --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+  }
+  [data-theme="light"] {
+    --bg:#f6f3ed; --bg-card:#fefcf8; --bg-raised:#f0ece4;
+    --border:#e2dbcf; --text:#1b1713; --text-sec:#5a5349;
+    --text-dim:#9a9183; --text-muted:#bfb8ab;
+    --accent:#b64e34; --accent-soft:#f4e4dd; --accent-text:#8e3922;
+    --pipe-wx:#2d8040; --pipe-wx-bg:#e9f2ea;
+    --pipe-pl:#3568a8; --pipe-pl-bg:#e8eef6;
+    --pipe-tr:#b36d2a; --pipe-tr-bg:#f4ede2;
+    --pipe-ai:#6b3fa0; --pipe-ai-bg:#f0eaf6;
+    --pipe-iv:#0d7377; --pipe-iv-bg:#e5f0f0;
+    --shadow-sm:0 1px 2px rgba(0,0,0,0.03); --shadow-md:0 4px 24px rgba(0,0,0,0.06);
+  }
+  [data-theme="dark"] {
+    --bg:#161411; --bg-card:#1e1c19; --bg-raised:#282521;
+    --border:#34302a; --text:#e8e3da; --text-sec:#b5ad9f;
+    --text-dim:#7a7366; --text-muted:#5b554a;
+    --accent:#d4765a; --accent-soft:#3a251c; --accent-text:#e08d74;
+    --pipe-wx:#53b56e; --pipe-wx-bg:#1a261d; --pipe-pl:#5f8fd4; --pipe-pl-bg:#171f2a;
+    --pipe-tr:#d49440; --pipe-tr-bg:#261f14; --pipe-ai:#9b6ecf; --pipe-ai-bg:#1f1729;
+    --pipe-iv:#2db5ba; --pipe-iv-bg:#142728;
+    --shadow-sm:0 1px 2px rgba(0,0,0,0.2); --shadow-md:0 4px 24px rgba(0,0,0,0.3);
+  }
+
+  *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    font-family:var(--font-body); background:var(--bg); color:var(--text);
+    line-height:1.7; min-height:100vh; padding:40px;
+    transition: background 0.5s var(--ease), color 0.5s var(--ease);
+  }
+
+  .theme-switch {
+    position:fixed; top:16px; right:20px; z-index:999; display:flex; gap:6px;
+  }
+  .theme-switch button {
+    padding:6px 16px; border:1px solid var(--border); border-radius:20px;
+    background:var(--bg-card); color:var(--text-dim); cursor:pointer;
+    font-family:var(--font-mono); font-size:0.7rem; transition:all 0.2s;
+  }
+  .theme-switch button.active { background:var(--accent); color:#fff; border-color:var(--accent); }
+
+  h2 {
+    font-family:var(--font-display); font-size:1.2rem; font-weight:700;
+    margin:44px 0 16px; color:var(--text);
+    border-bottom:1px solid var(--border); padding-bottom:8px;
+  }
+  h2:first-of-type { margin-top:0; }
+  .subtitle { font-size:0.78rem; color:var(--text-dim); font-weight:400; margin-left:8px; }
+
+  .card-grid { display:grid; grid-template-columns:repeat(12,1fr); gap:20px; max-width:920px; }
+
+  /* Card base */
+  .card {
+    background:var(--bg-card); border:1px solid var(--border);
+    border-left:none; border-radius:0 var(--radius) var(--radius) 0;
+    padding:var(--sd); cursor:pointer; transition:all 0.3s var(--ease);
+    position:relative; overflow:visible;
+  }
+  .card:hover { transform:translateY(-2px); box-shadow:var(--shadow-md); }
+  .card.standard { grid-column:span 4; border-top:4px solid var(--accent); }
+  .card.standard .card-title {
+    font-family:var(--font-display); font-size:1.08rem; font-weight:700;
+    line-height:1.4; color:var(--text); margin-bottom:6px;
+  }
+  .card.standard[data-pipeline="AI资讯"] { border-top-color:var(--pipe-ai); }
+  .card.standard[data-pipeline="微信资讯"] { border-top-color:var(--pipe-wx); }
+  .card.standard[data-pipeline="游戏跟踪"] { border-top-color:var(--pipe-tr); }
+  .card.standard[data-pipeline="设计管线"] { border-top-color:var(--pipe-pl); }
+  .card.standard[data-pipeline="访谈跟踪"] { border-top-color:var(--pipe-iv); }
+
+  .card-top { display:flex; align-items:center; gap:8px; margin-bottom:12px; }
+  .card-badge {
+    font-family:var(--font-mono); font-size:0.56rem; font-weight:500;
+    padding:2px 8px; border-radius:3px; letter-spacing:0.05em;
+    background:var(--bg-raised); color:var(--text-dim);
+  }
+  .card-date { font-family:var(--font-mono); font-size:0.62rem; color:var(--text-muted); }
+  .card-desc {
+    font-size:0.85rem; color:var(--text-sec); line-height:1.6;
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
+  }
+  .card-badge.pipe-ai { background:var(--pipe-ai-bg); color:var(--pipe-ai); }
+  .card-badge.pipe-wx { background:var(--pipe-wx-bg); color:var(--pipe-wx); }
+  .card-badge.pipe-tr { background:var(--pipe-tr-bg); color:var(--pipe-tr); }
+  .card-badge.pipe-pl { background:var(--pipe-pl-bg); color:var(--pipe-pl); }
+  .card-badge.pipe-iv { background:var(--pipe-iv-bg); color:var(--pipe-iv); }
+
+  /* ⭐ Star */
+  .bm-star {
+    position:absolute; top:14px; right:14px;
+    background:none; border:none; color:var(--text-muted); cursor:pointer;
+    padding:4px; line-height:0; z-index:2; transition:all 0.2s var(--ease);
+  }
+  .bm-star svg { width:18px; height:18px; display:block; }
+  .bm-star:hover { color:#d4a017; transform:scale(1.1); }
+
+  /* ═══════════════════════════════════════════════
+     VARIANT A — 朱砂戳记 (Stamp / Chop)
+     报纸"号外"印章风格，红色边框，轻微旋转
+     ═══════════════════════════════════════════════ */
+  .new-variant-a {
+    position:absolute; top:10px; left:-6px;
+    font-family:var(--font-display);
+    font-size:0.66rem; font-weight:800; letter-spacing:0.1em;
+    color:#c0392b;
+    border:2px solid #c0392b;
+    padding:3px 10px;
+    transform:rotate(-6deg);
+    opacity:0.92;
+    line-height:1;
+    background:transparent;
+    pointer-events:none; z-index:5;
+    animation: stampIn 0.35s var(--ease);
+  }
+  [data-theme="dark"] .new-variant-a {
+    color:#f07050; border-color:#f07050;
+  }
+  @keyframes stampIn {
+    from { transform:rotate(-6deg) scale(1.6); opacity:0; }
+    to   { transform:rotate(-6deg) scale(1); opacity:0.92; }
+  }
+
+  /* ═══════════════════════════════════════════════
+     VARIANT B — 实心圆点徽章 (Dot Pill)
+     圆点前缀 + 更大更饱和的橙色药丸
+     ═══════════════════════════════════════════════ */
+  .new-variant-b {
+    display:inline-flex; align-items:center; gap:5px;
+    font-family:var(--font-mono); font-size:0.56rem; font-weight:600;
+    letter-spacing:0.08em;
+    padding:3px 9px; border-radius:3px;
+    background:#e74c1b; color:#fff;
+    margin-left:auto;
+    white-space:nowrap;
+    flex-shrink:0;
+    animation:newPulse 2.2s var(--ease) infinite;
+  }
+  .new-variant-b::before {
+    content:''; display:block; width:5px; height:5px;
+    border-radius:50%; background:#fff; opacity:0.9;
+    animation:dotBlink 1.1s ease-in-out infinite;
+  }
+  [data-theme="dark"] .new-variant-b {
+    background:#e05530; color:#fff;
+  }
+  @keyframes newPulse {
+    0%, 100% { opacity:1; box-shadow:0 0 0 0 rgba(231,76,27,0.35); }
+    50%      { opacity:0.85; box-shadow:0 0 0 6px rgba(231,76,27,0); }
+  }
+  @keyframes dotBlink {
+    0%, 100% { opacity:1; }
+    50%      { opacity:0.3; }
+  }
+
+  /* ═══════════════════════════════════════════════
+     VARIANT C — 亮色条带 (Left Ribbon)
+     卡片左侧彩色竖条 + "NEW" 指示
+     ═══════════════════════════════════════════════ */
+  .card.has-new-ribbon {
+    border-left:4px solid #e74c1b !important;
+    padding-left:calc(var(--sd) - 3px);
+  }
+  [data-theme="dark"] .card.has-new-ribbon {
+    border-left-color:#f07050 !important;
+  }
+  .new-variant-c {
+    font-family:var(--font-mono); font-size:0.5rem; font-weight:600;
+    letter-spacing:0.1em;
+    color:#e74c1b;
+    text-transform:uppercase;
+    margin-left:auto;
+    white-space:nowrap;
+  }
+  [data-theme="dark"] .new-variant-c { color:#f07050; }
+
+  /* ═══════════════════════════════════════════════
+     VARIANT D — 暖色底纹 (Background Tint)
+     整张卡微妙的暖橙底色渐变
+     ═══════════════════════════════════════════════ */
+  .card.has-new-tint {
+    background:linear-gradient(135deg, var(--bg-card) 60%, #fef5f0 100%);
+  }
+  [data-theme="dark"] .card.has-new-tint {
+    background:linear-gradient(135deg, var(--bg-card) 60%, #2a1a10 100%);
+  }
+  .new-variant-d {
+    font-family:var(--font-display); font-size:0.62rem; font-weight:700;
+    letter-spacing:0.06em; color:#d4553a;
+    margin-left:auto; white-space:nowrap;
+  }
+  [data-theme="dark"] .new-variant-d { color:#f08060; }
+
+  /* ═══════════════════════════════════════════════
+     OLD VERSION (v2) — for reference
+     ═══════════════════════════════════════════════ */
+  .old-new-badge {
+    font-family:var(--font-mono);
+    font-size:0.52rem; font-weight:500; letter-spacing:0.08em;
+    padding:2px 7px; border-radius:3px;
+    background:#fce4d6; color:#c05026;
+    white-space:nowrap; margin-left:auto;
+  }
+  [data-theme="dark"] .old-new-badge { background:#3d1f10; color:#f0a070; }
+
+  /* Labels */
+  .variant-label {
+    position:absolute; top:-28px; left:0;
+    font-family:var(--font-mono); font-size:0.54rem; letter-spacing:0.06em;
+    color:var(--accent-text); white-space:nowrap; font-weight:600;
+  }
+
+  /* Notes */
+  .notes {
+    max-width:920px; margin-top:32px; padding:20px;
+    background:var(--bg-card); border:1px solid var(--border);
+    border-left:3px solid var(--accent); border-radius:0 var(--radius) var(--radius) 0;
+  }
+  .notes h3 { font-size:0.85rem; margin-bottom:12px; }
+  .notes dl { display:grid; grid-template-columns:100px 1fr; gap:6px 12px; font-size:0.82rem; }
+  .notes dt {
+    font-family:var(--font-mono); font-size:0.58rem; letter-spacing:0.06em;
+    color:var(--text-dim); text-transform:uppercase; padding-top:2px;
+  }
+  .notes dd { color:var(--text-sec); }
+
+  .pick-row {
+    display:flex; gap:18px; margin-top:16px; flex-wrap:wrap;
+  }
+  .pick-btn {
+    padding:10px 24px; border:2px solid var(--accent); border-radius:24px;
+    background:transparent; color:var(--accent-text);
+    font-family:var(--font-body); font-size:0.9rem; font-weight:600; cursor:pointer;
+    transition:all 0.25s var(--ease);
+  }
+  .pick-btn:hover { background:var(--accent); color:#fff; }
+</style>
+</head>
+<body>
+
+<div class="theme-switch">
+  <button onclick="setTheme('light')" id="btnLight" class="active">☀ 亮</button>
+  <button onclick="setTheme('dark')" id="btnDark">🌙 暗</button>
+</div>
+
+<!-- ════════════════════════════════════════
+     V2 ORIGINAL (for comparison)
+     ════════════════════════════════════════ -->
+<h2>V2 旧版 <span class="subtitle">— 跟 pipeline badge 太像，不够醒目</span></h2>
+<div class="card-grid">
+  <div class="card standard" data-pipeline="AI资讯">
+    <button class="bm-star"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></button>
+    <div class="card-top">
+      <span class="card-badge pipe-ai">AI资讯</span>
+      <span class="card-badge">分析报告</span>
+      <span class="old-new-badge">NEW</span>
+    </div>
+    <div class="card-title">GPT-5 推理能力突破：从链式思维到树状搜索</div>
+    <div class="card-desc">OpenAI 最新模型在数学推理基准测试中取得显著进展…</div>
+  </div>
+  <div class="card standard" data-pipeline="微信资讯">
+    <button class="bm-star"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></button>
+    <div class="card-top">
+      <span class="card-badge pipe-wx">微信资讯</span>
+      <span class="card-badge">快讯</span>
+      <span class="old-new-badge">NEW</span>
+    </div>
+    <div class="card-title">米哈游新作《星布谷地》获版号</div>
+    <div class="card-desc">国家新闻出版署公布2026年6月国产网络游戏审批信息…</div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     VARIANT A — 朱砂戳记
+     ════════════════════════════════════════ -->
+<h2>方案 A — 朱砂戳记 <span class="subtitle">邮票/印章风格  ·  轻微旋转  ·  报纸美学</span></h2>
+<div class="card-grid">
+  <div class="card standard" data-pipeline="AI资讯">
+    <span class="new-variant-a">NEW</span>
+    <button class="bm-star"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></button>
+    <div class="card-top">
+      <span class="card-badge pipe-ai">AI资讯</span>
+      <span class="card-badge">分析报告</span>
+      <span class="card-date">2026-06-28</span>
+    </div>
+    <div class="card-title">GPT-5 推理能力突破：从链式思维到树状搜索</div>
+    <div class="card-desc">OpenAI 最新模型在数学推理基准测试中取得显著进展…</div>
+  </div>
+  <div class="card standard" data-pipeline="微信资讯">
+    <span class="new-variant-a">NEW</span>
+    <button class="bm-star"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></button>
+    <div class="card-top">
+      <span class="card-badge pipe-wx">微信资讯</span>
+      <span class="card-badge">快讯</span>
+      <span class="card-date">2026-06-27</span>
+    </div>
+    <div class="card-title">米哈游新作《星布谷地》获版号</div>
+    <div class="card-desc">国家新闻出版署公布2026年6月国产网络游戏审批信息…</div>
+  </div>
+  <div class="card standard" data-pipeline="游戏跟踪">
+    <span class="new-variant-a">NEW</span>
+    <button class="bm-star"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></button>
+    <div class="card-top">
+      <span class="card-badge pipe-tr">游戏跟踪</span>
+      <span class="card-badge">深度分析</span>
+      <span class="card-date">2026-06-26</span>
+    </div>
+    <div class="card-title">《黑神话：悟空》DLC 战斗系统革新分析</div>
+    <div class="card-desc">从动作帧数据出发，详解新加入的架势切换机制…</div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     VARIANT B — 实心橙红药丸
+     ════════════════════════════════════════ -->
+<h2>方案 B — 实心橙红药丸 <span class="subtitle">高饱和实心填充  ·  脉冲光圈  ·  闪烁圆点</span></h2>
+<div class="card-grid">
+  <div class="card standard" data-pipeline="AI资讯">
+    <button class="bm-star"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></button>
+    <div class="card-top">
+      <span class="card-badge pipe-ai">AI资讯</span>
+      <span class="card-badge">分析报告</span>
+      <span class="new-variant-b">NEW</span>
+    </div>
+    <div class="card-title">GPT-5 推理能力突破：从链式思维到树状搜索</div>
+    <div class="card-desc">OpenAI 最新模型在数学推理基准测试中取得显著进展…</div>
+  </div>
+  <div class="card standard" data-pipeline="微信资讯">
+    <button class="bm-star"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></button>
+    <div class="card-top">
+      <span class="card-badge pipe-wx">微信资讯</span>
+      <span class="card-badge">快讯</span>
+      <span class="new-variant-b">NEW</span>
+    </div>
+    <div class="card-title">米哈游新作《星布谷地》获版号</div>
+    <div class="card-desc">国家新闻出版署公布2026年6月国产网络游戏审批信息…</div>
+  </div>
+  <div class="card standard" data-pipeline="游戏跟踪">
+    <button class="bm-star"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></button>
+    <div class="card-top">
+      <span class="card-badge pipe-tr">游戏跟踪</span>
+      <span class="card-badge">深度分析</span>
+      <span class="new-variant-b">NEW</span>
+    </div>
+    <div class="card-title">《黑神话：悟空》DLC 战斗系统革新分析</div>
+    <div class="card-desc">从动作帧数据出发，详解新加入的架势切换机制…</div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     VARIANT C — 左侧色条
+     ════════════════════════════════════════ -->
+<h2>方案 C — 左侧色条 <span class="subtitle">卡片左侧橙红竖线  ·  保留文字 NEW  ·  面积最大</span></h2>
+<div class="card-grid">
+  <div class="card standard has-new-ribbon" data-pipeline="AI资讯">
+    <button class="bm-star"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></button>
+    <div class="card-top">
+      <span class="card-badge pipe-ai">AI资讯</span>
+      <span class="card-badge">分析报告</span>
+      <span class="new-variant-c">● NEW</span>
+    </div>
+    <div class="card-title">GPT-5 推理能力突破：从链式思维到树状搜索</div>
+    <div class="card-desc">OpenAI 最新模型在数学推理基准测试中取得显著进展…</div>
+  </div>
+  <div class="card standard has-new-ribbon" data-pipeline="微信资讯">
+    <button class="bm-star"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></button>
+    <div class="card-top">
+      <span class="card-badge pipe-wx">微信资讯</span>
+      <span class="card-badge">快讯</span>
+      <span class="new-variant-c">● NEW</span>
+    </div>
+    <div class="card-title">米哈游新作《星布谷地》获版号</div>
+    <div class="card-desc">国家新闻出版署公布2026年6月国产网络游戏审批信息…</div>
+  </div>
+  <div class="card standard has-new-ribbon" data-pipeline="游戏跟踪">
+    <button class="bm-star"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></button>
+    <div class="card-top">
+      <span class="card-badge pipe-tr">游戏跟踪</span>
+      <span class="card-badge">深度分析</span>
+      <span class="new-variant-c">● NEW</span>
+    </div>
+    <div class="card-title">《黑神话：悟空》DLC 战斗系统革新分析</div>
+    <div class="card-desc">从动作帧数据出发，详解新加入的架势切换机制…</div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     VARIANT D — 暖色底纹
+     ════════════════════════════════════════ -->
+<h2>方案 D — 暖色底纹 <span class="subtitle">卡片背景渐变暖色  ·  柔和优雅  ·  不抢视觉</span></h2>
+<div class="card-grid">
+  <div class="card standard has-new-tint" data-pipeline="AI资讯">
+    <button class="bm-star"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></button>
+    <div class="card-top">
+      <span class="card-badge pipe-ai">AI资讯</span>
+      <span class="card-badge">分析报告</span>
+      <span class="new-variant-d">✦ 新到</span>
+    </div>
+    <div class="card-title">GPT-5 推理能力突破：从链式思维到树状搜索</div>
+    <div class="card-desc">OpenAI 最新模型在数学推理基准测试中取得显著进展…</div>
+  </div>
+  <div class="card standard has-new-tint" data-pipeline="微信资讯">
+    <button class="bm-star"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></button>
+    <div class="card-top">
+      <span class="card-badge pipe-wx">微信资讯</span>
+      <span class="card-badge">快讯</span>
+      <span class="new-variant-d">✦ 新到</span>
+    </div>
+    <div class="card-title">米哈游新作《星布谷地》获版号</div>
+    <div class="card-desc">国家新闻出版署公布2026年6月国产网络游戏审批信息…</div>
+  </div>
+  <div class="card standard has-new-tint" data-pipeline="游戏跟踪">
+    <button class="bm-star"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></button>
+    <div class="card-top">
+      <span class="card-badge pipe-tr">游戏跟踪</span>
+      <span class="card-badge">深度分析</span>
+      <span class="new-variant-d">✦ 新到</span>
+    </div>
+    <div class="card-title">《黑神话：悟空》DLC 战斗系统革新分析</div>
+    <div class="card-desc">从动作帧数据出发，详解新加入的架势切换机制…</div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════
+     COMPARISON NOTES
+     ════════════════════════════════════════ -->
+<div class="notes">
+  <h3>四方案对比</h3>
+  <dl>
+    <dt>A — 朱砂戳记</dt>
+    <dd>左上角  ·  衬线体  ·  空心红框  ·  -6°旋转  ·  报纸印章美学<br>
+    👍 最独特，完全不像 badge。👎 绝对定位可能跟紧凑卡片冲突，旋转在暗色下可读性略降</dd>
+
+    <dt>B — 实心橙红</dt>
+    <dd>card-top 行尾  ·  等宽字体  ·  纯色填充 #e74c1b  ·  光圈脉冲  ·  闪烁圆点<br>
+    👍 最醒目，视觉权重高。👎 可能过于抢眼（但可调饱和度）</dd>
+
+    <dt>C — 左侧色条</dt>
+    <dd>4px 橙红竖线替代灰边  ·  行内文字 NEW  ·  整卡变色<br>
+    👍 面积最大最明显，结构清晰。👎 跟 pipeline 彩色顶线和灰色左边框设计打架（卡片本身就是 border-left:none + 彩色 top）</dd>
+
+    <dt>D — 暖色底纹</dt>
+    <dd>渐变暖橙背景  ·  "✦ 新到" 衬线体  ·  无边框<br>
+    👍 优雅低调，最符合温暖纸媒。👎 不够醒目（你说的问题没解决），且渐变在大量卡片上可能不统一</dd>
+  </dl>
+
+  <h3 style="margin-top:20px;">🎯 建议</h3>
+  <p style="color:var(--text-sec); font-size:0.9rem; line-height:1.8;">
+  <strong>方案 A（朱砂戳记）</strong> 最符合"顶尖资讯"的报纸编辑美学，独一无二不跟任何 badge 撞脸。<br>
+  如果觉得印章太激进，<strong>方案 B（实心橙红）</strong> 是折中——保持药丸形状但用高饱和实心填充 + 脉冲光圈拉开差距。
+  </p>
+</div>
+
+<script>
+function setTheme(t) {
+  document.documentElement.setAttribute('data-theme', t);
+  document.getElementById('btnLight').classList.toggle('active', t==='light');
+  document.getElementById('btnDark').classList.toggle('active', t==='dark');
+}
+</script>
+</body>
+</html>

@@ -362,7 +362,11 @@
     const el = document.createElement('div');
     el.className = 'card ' + variant;
     el.setAttribute('data-pipeline', a.pipeline);
+    el.setAttribute('data-id', a.id);
     const pc = pipeClass(a.pipeline);
+
+    // NEW stamp — hidden initially, refreshed when auth/read state is known
+    const stampHtml = `<span class="card-stamp-new">NEW</span>`;
 
     // Always render bookmark star; hidden initially until auth state is known
     const bmStar = `<button class="bm-star${Auth.isBookmarked(a.id) ? ' active' : ''}" data-id="${esc(a.id)}" title="${Auth.isBookmarked(a.id) ? '取消收藏' : '收藏'}" style="display:none">${Auth.isBookmarked(a.id) ? starFilled : starSvg}</button>`;
@@ -371,6 +375,7 @@
       const tags = (a.tags || []).slice(0, 4);
       const desc = (a.summary || '').slice(0, 120);
       el.innerHTML =
+        stampHtml +
         `<div class="card-top">` +
           `<span class="card-badge ${pc}">${esc(a.pipeline)}</span>` +
           `<span class="card-badge">${esc(a.stage)}</span>` +
@@ -383,6 +388,7 @@
         (tags.length ? `<div class="card-tags">${tags.map(t => `<span class="card-tag">${esc(t)}</span>`).join('')}</div>` : '');
     } else {
       el.innerHTML =
+        stampHtml +
         `<span class="card-badge ${pc}">${esc(a.pipeline)}</span>` +
         bmStar +
         `<div class="card-title">${esc(a.title)}</div>`;
@@ -510,6 +516,10 @@
       if (!r.ok) throw r;
       drawDetail(await r.json());
       refreshBookmarkStars();
+      // Mark as read
+      if (Auth.getUser()) {
+        Auth.markAsRead(id).then(() => refreshReadBadges());
+      }
     } catch (e) {
       console.error(e);
       E.art.innerHTML = '<div class="blank-slate" style="display:block"><p class="blank-msg">文章加载失败</p></div>';
@@ -976,6 +986,28 @@
     }
   });
 
+  /* ---- Refresh NEW Badges ---- */
+  function refreshReadBadges() {
+    const user = Auth.getUser();
+    document.querySelectorAll('.card-stamp-new').forEach(stamp => {
+      const card = stamp.closest('.card');
+      if (!card) return;
+      const id = card.dataset.id;
+      if (!user || !id) {
+        stamp.style.display = 'none';
+        card.classList.remove('has-new');
+        return;
+      }
+      if (Auth.isRead(id)) {
+        stamp.style.display = 'none';
+        card.classList.remove('has-new');
+      } else {
+        stamp.style.display = 'block';
+        card.classList.add('has-new');
+      }
+    });
+  }
+
   /* ---- Refresh Bookmark Stars After Login ---- */
   function refreshBookmarkStars() {
     const user = Auth.getUser();
@@ -993,6 +1025,7 @@
       }
       star.title = bookmarked ? '取消收藏' : '收藏';
     });
+    refreshReadBadges();
   }
 
   /* ---- Init ---- */

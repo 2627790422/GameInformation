@@ -15,6 +15,7 @@
   let _user = null;
   let _profile = null;
   let _bookmarks = new Set();  // article_id -> true
+  let _readArticles = new Set();  // article_id -> true
   let _listeners = [];
 
   /* ---- Init ---- */
@@ -40,6 +41,7 @@
       _user = session.user;
       await loadProfile();
       await loadBookmarks();
+      await loadReadHistory();
     }
 
     // Always notify after session restore (even if null — tells listeners initial state)
@@ -51,10 +53,12 @@
         _user = session.user;
         await loadProfile();
         await loadBookmarks();
+        await loadReadHistory();
       } else {
         _user = null;
         _profile = null;
         _bookmarks = new Set();
+        _readArticles = new Set();
       }
       _notify();
     });
@@ -72,6 +76,33 @@
     const sb = getClient();
     const { data } = await sb.from('bookmarks').select('article_id').eq('user_id', _user.id);
     _bookmarks = new Set((data || []).map(r => r.article_id));
+  }
+
+  async function loadReadHistory() {
+    if (!_user) return;
+    const sb = getClient();
+    const { data } = await sb.from('reading_history').select('article_id').eq('user_id', _user.id);
+    _readArticles = new Set((data || []).map(r => r.article_id));
+  }
+
+  async function markAsRead(articleId) {
+    if (!_user) return;
+    const sb = getClient();
+    const { error } = await sb.from('reading_history').insert({
+      user_id: _user.id,
+      article_id: articleId
+    });
+    if (error) {
+      // Ignore duplicate key errors
+      if (error.code === '23505') return;
+      console.error('[Auth] markAsRead error:', error);
+      return;
+    }
+    _readArticles.add(articleId);
+  }
+
+  function isRead(articleId) {
+    return _readArticles.has(articleId);
   }
 
   /* ---- Listeners ---- */
@@ -99,6 +130,7 @@
       _user = data.session.user;
       await loadProfile();
       await loadBookmarks();
+      await loadReadHistory();
       _notify();
     }
     return { user: data.user, session: data.session, needsEmailConfirmation: needsConfirmation };
@@ -111,6 +143,7 @@
     _user = data.user;
     await loadProfile();
     await loadBookmarks();
+    await loadReadHistory();
     _notify();
     return data;
   }
@@ -122,6 +155,7 @@
     _user = null;
     _profile = null;
     _bookmarks = new Set();
+    _readArticles = new Set();
     _notify();
   }
 
@@ -196,7 +230,9 @@
     addBookmark,
     removeBookmark,
     getBookmarks,
-    isBookmarked
+    isBookmarked,
+    markAsRead,
+    isRead
   };
 
 })();
