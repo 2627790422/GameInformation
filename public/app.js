@@ -224,6 +224,7 @@
     drawTL(reset);
     updateCnt();
     updateMastheadMeta();
+    refreshBookmarkStars();
   }
 
   /* ---- Router ---- */
@@ -508,6 +509,7 @@
       const r = await fetch(`/api/articles/${id}`);
       if (!r.ok) throw r;
       drawDetail(await r.json());
+      refreshBookmarkStars();
     } catch (e) {
       console.error(e);
       E.art.innerHTML = '<div class="blank-slate" style="display:block"><p class="blank-msg">文章加载失败</p></div>';
