@@ -62,7 +62,7 @@ GameInformation 是一个无编译步骤、无测试框架、无打包产物的"
 
 | 改动文件 | 验证方式 |
 |---------|---------|
-| `public/*` | `npm start` → 浏览器操作 → 截图关键状态 |
+| `public/*` | `npm start` → 浏览器操作 → 截图关键状态 → **vision 视觉分析截图**（自动确认 UI 状态） |
 | `server.js` | `npm start` → curl API + 浏览器确认 |
 | `api/*.js` | `npm start` → curl 端点 → 浏览器确认。**额外检查 Vercel 兼容性**：`require` 语句在顶层，不要在 handler 外同步调用 `fs`/`path` 等 Node 原生模块 |
 | `lib/parser.js` | `node -e "require('./lib/parser')"` 无报错 → `npm start` → 检查文章解析 |
@@ -70,6 +70,47 @@ GameInformation 是一个无编译步骤、无测试框架、无打包产物的"
 | `lib/search.js` | `npm start` → curl 搜索端点 → 检查返回 |
 | `scripts/*.js` | `node scripts/xxx.js` 看输出 |
 | `.github/workflows/*.yml` | push 后看 Actions 日志 |
+
+### Vision 视觉验证（R3 推荐）
+
+前端 UI 改动时，在 R3 用 `vision` skill（GLM-4.6V 视觉模型）自动分析截图，代替人工肉眼判断：
+
+```bash
+# 截图后用 vision 分析
+python -c "
+import base64, json, urllib.request, sys
+sys.stdout.reconfigure(encoding='utf-8')
+url = 'https://open.bigmodel.cn/api/paas/v4/chat/completions'
+with open('screenshot.png', 'rb') as f:
+    img_b64 = base64.b64encode(f.read()).decode('utf-8')
+data = json.dumps({
+    'model': 'glm-4.6v',
+    'messages': [{'role': 'user', 'content': [
+        {'type': 'image_url', 'image_url': {'url': f'data:image/png;base64,{img_b64}'}},
+        {'type': 'text', 'text': '描述你看到的内容，确认某个UI元素是否存在'}
+    ]}],
+    'max_tokens': 500,
+    'thinking': {'type': 'disabled'}   # 必须关 thinking
+}).encode('utf-8')
+req = urllib.request.Request(url, data=data, headers={
+    'Authorization': 'Bearer fb4b7ecf506d4b2297880673739b50ff.YfhFnNBGwQCpoqFe',
+    'Content-Type': 'application/json'
+})
+resp = urllib.request.urlopen(req, timeout=120)
+result = json.loads(resp.read().decode('utf-8'))
+print(result['choices'][0]['message']['content'])
+"
+```
+
+**何时用**:
+- `public/*` 改动后确认 UI 状态（NEW 标记、登录态、收藏星标、主题切换等）
+- 需要逐张分析多状态截图时，用 vision 比人眼更快更客观
+- 不适合：纯 JS 逻辑验证（用 `agent-browser eval` 更直接）
+
+**注意**:
+- `max_tokens` 根据任务复杂度调整（简单确认 200，复杂描述 500~1024）
+- 图片通过 Base64 传入，超大图可能超时
+- Vision 结果结合 `agent-browser eval` 的 JS 数据双验证更可靠
 
 ## 产出目录
 

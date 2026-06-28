@@ -35,6 +35,8 @@
 
   const PAGE_SIZE = 15;
 
+  const SYSTEM_NEW_CUTOFF = '2026-06-28';
+
   /* ---- State ---- */
   const S = {
     activeModule: 'ai',
@@ -348,6 +350,7 @@
     el.className = 'card ' + variant;
     el.setAttribute('data-pipeline', a.pipeline);
     el.setAttribute('data-id', a.id);
+    el.setAttribute('data-date', a.date || '');
     const pc = pipeClass(a.pipeline);
 
     // NEW stamp — hidden initially, refreshed when auth/read state is known
@@ -974,6 +977,15 @@
   /* ---- Refresh NEW Badges ---- */
   function refreshReadBadges() {
     const user = Auth.getUser();
+
+    // Determine the effective cutoff date for NEW badge:
+    // - SYSTEM_NEW_CUTOFF: articles before this date never show NEW
+    // - User's registration date: new users don't see NEW on older articles
+    const userCreatedAt = user?.created_at ? user.created_at.substring(0, 10) : null;
+    const effectiveCutoff = userCreatedAt && userCreatedAt > SYSTEM_NEW_CUTOFF
+      ? userCreatedAt
+      : SYSTEM_NEW_CUTOFF;
+
     document.querySelectorAll('.card-stamp-new').forEach(stamp => {
       const card = stamp.closest('.card');
       if (!card) return;
@@ -983,6 +995,14 @@
         card.classList.remove('has-new');
         return;
       }
+      // Rule: articles before the cutoff date never show NEW
+      const articleDate = card.dataset.date || '';
+      if (articleDate < effectiveCutoff) {
+        stamp.style.display = 'none';
+        card.classList.remove('has-new');
+        return;
+      }
+      // Rule: already-read articles don't show NEW
       if (Auth.isRead(id)) {
         stamp.style.display = 'none';
         card.classList.remove('has-new');

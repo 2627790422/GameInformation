@@ -14,6 +14,7 @@
 - [修复 Vercel 数据管线](plans/2026-06-13-fix-vercel-data-pipeline.md) — 2026-06-13，Bug 修复
 - [收藏星标与登录态 UI 改版](plans/2026-06-28-bookmark-ui-redesign.md) — 2026-06-28，UI 优化
 - [未读 NEW 标记](plans/add-unread-badge/handoff-r1.md) — 已完成 - 2026-06-28，新功能
+- [NEW 标记日期门槛](plans/new-badge-cutoff-rules/handoff-r1.md) — 已完成 - 2026-06-28，规则补充
 - [模块切换栏始终可见](plans/toggle-redesign/handoff-r1.md) — 已完成 - 2026-06-28，UI 优化
 
 ## 历史文档
